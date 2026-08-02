@@ -231,11 +231,28 @@
     <string name="info">Info</string>
     <string name="seekbar">Seekbar</string>
     <string name="shuffle">Shuffle</string>
+    <string name="shuffle_on">Shuffle on</string>
+    <string name="shuffle_off">Shuffle off</string>
     <string name="previous">Previous</string>
     <string name="play">Play</string>
+    <string name="pause">Pause</string>
     <string name="next">Next</string>
     <string name="repeat">Repeat</string>
+    <string name="repeat_off">Repeat off</string>
+    <string name="repeat_all">Repeat all</string>
+    <string name="repeat_one">Repeat one</string>
     <string name="close">Close</string>
+    <string name="equalizer">Equalizer</string>
+    <string name="more_options">More options</string>
+    <string name="like">Like</string>
+    <string name="liked">Liked</string>
+    <string name="delete">Delete</string>
+    <string name="retry">Retry</string>
+    <string name="reorder">Reorder</string>
+    <string name="insert_search">Insert search query</string>
+    <string name="browse_extensions">Browse Extensions</string>
+    <string name="top_genres">Top Genres</string>
+    <string name="recent_searches">Recent Searches</string>
     <string name="no_lyrics">No Lyrics</string>
 
     <string name="sleep_timer">Sleep Timer</string>
@@ -275,6 +292,22 @@
 
     <string name="crying_af" translatable="false">;-;</string>
     <string name="so_empty">So empty…</string>
+    <string name="scan_device_folders">Scan Device Folders</string>
+    <string name="add_extension_source">Add Extension Source</string>
+    <string name="search_music">Search Music</string>
+    <string name="explore_music">Explore Music</string>
+    <string name="add_songs">Add Songs</string>
+    <string name="empty_library_title">Your library is empty</string>
+    <string name="empty_library_desc">Search for music or add extension sources to build your library.</string>
+    <string name="empty_library_offline_title">No local music found</string>
+    <string name="empty_library_offline_desc">Scan your device storage for audio files or add extension sources to stream.</string>
+    <string name="empty_playlist_title">This playlist is empty</string>
+    <string name="empty_playlist_editable_desc">Add songs to start building this playlist.</string>
+    <string name="empty_playlist_desc">No tracks found in this playlist.</string>
+    <string name="empty_downloads_title">No downloaded tracks</string>
+    <string name="empty_downloads_desc">Download songs and playlists for offline playback.</string>
+    <string name="empty_extensions_title">No extensions installed</string>
+    <string name="empty_extensions_desc">Add extension sources to search, stream, and download music.</string>
     <string name="not_loading">Not Loading</string>
     <string name="n_dot_x" translatable="false">%1$d. %2$s</string>
 

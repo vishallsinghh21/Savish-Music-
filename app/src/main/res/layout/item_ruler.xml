@@ -22,7 +22,7 @@
         android:id="@+id/rulerText"
         tools:text=""
         android:gravity="center"
-        android:alpha="0.66"
+        android:alpha="0.80"
         android:maxLines="1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"/>

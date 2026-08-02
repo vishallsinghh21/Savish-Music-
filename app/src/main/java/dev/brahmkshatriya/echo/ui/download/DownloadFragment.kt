@@ -20,6 +20,7 @@ import dev.brahmkshatriya.echo.ui.common.UiViewModel.Companion.applyContentInset
 import dev.brahmkshatriya.echo.ui.common.UiViewModel.Companion.applyFabInsets
 import dev.brahmkshatriya.echo.ui.common.UiViewModel.Companion.applyInsets
 import dev.brahmkshatriya.echo.ui.download.DownloadsAdapter.Companion.toItems
+import dev.brahmkshatriya.echo.ui.feed.EmptyAdapter
 import dev.brahmkshatriya.echo.ui.feed.FeedAdapter.Companion.getFeedAdapter
 import dev.brahmkshatriya.echo.ui.feed.FeedAdapter.Companion.getTouchHelper
 import dev.brahmkshatriya.echo.ui.feed.FeedClickListener.Companion.getFeedListener
@@ -56,6 +57,21 @@ class DownloadFragment : Fragment(R.layout.fragment_download) {
     }
 
     private val feedListener by lazy { getFeedListener() }
+    private val emptyAdapter by lazy {
+        EmptyAdapter(
+            EmptyAdapter.Config(
+                title = getString(R.string.empty_downloads_title),
+                subtitle = getString(R.string.empty_downloads_desc),
+                iconDrawable = R.drawable.ic_offline,
+                primaryButton = EmptyAdapter.ButtonConfig(
+                    text = getString(R.string.explore_music),
+                    icon = R.drawable.ic_search_filled
+                ) {
+                    parentFragmentManager.popBackStack()
+                }
+            )
+        )
+    }
     private val feedAdapter by lazy {
         getFeedAdapter(feedData, feedListener)
     }
@@ -87,7 +103,7 @@ class DownloadFragment : Fragment(R.layout.fragment_download) {
             GridAdapter.Concat(
                 downloadsAdapter,
                 lineAdapter,
-                feedAdapter.withLoading(this)
+                feedAdapter.withLoading(this, emptyAdapter)
             )
         )
         observe(vm.flow) { infos ->

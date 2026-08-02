@@ -8,18 +8,21 @@ import dev.brahmkshatriya.echo.R
 import dev.brahmkshatriya.echo.common.models.Feed
 import dev.brahmkshatriya.echo.common.models.Playlist
 import dev.brahmkshatriya.echo.databinding.FragmentMediaDetailsBinding
+import dev.brahmkshatriya.echo.ui.common.FragmentUtils.openFragment
 import dev.brahmkshatriya.echo.ui.common.GridAdapter
 import dev.brahmkshatriya.echo.ui.common.GridAdapter.Companion.configureGridLayout
 import dev.brahmkshatriya.echo.ui.common.UiViewModel
 import dev.brahmkshatriya.echo.ui.common.UiViewModel.Companion.applyContentInsets
 import dev.brahmkshatriya.echo.ui.common.UiViewModel.Companion.applyInsets
 import dev.brahmkshatriya.echo.ui.common.UiViewModel.Companion.configure
+import dev.brahmkshatriya.echo.ui.feed.EmptyAdapter
 import dev.brahmkshatriya.echo.ui.feed.FeedAdapter.Companion.getFeedAdapter
 import dev.brahmkshatriya.echo.ui.feed.FeedAdapter.Companion.getTouchHelper
 import dev.brahmkshatriya.echo.ui.feed.FeedClickListener
 import dev.brahmkshatriya.echo.ui.feed.FeedClickListener.Companion.getFeedListener
 import dev.brahmkshatriya.echo.ui.feed.FeedViewModel
 import dev.brahmkshatriya.echo.ui.media.MediaHeaderAdapter.Companion.getMediaHeaderListener
+import dev.brahmkshatriya.echo.ui.playlist.edit.EditPlaylistFragment
 import dev.brahmkshatriya.echo.utils.ContextUtils.observe
 import dev.brahmkshatriya.echo.utils.ui.FastScrollerHelper
 import kotlinx.coroutines.flow.combine
@@ -81,6 +84,7 @@ class MediaDetailsFragment : Fragment(R.layout.fragment_media_details) {
         }
     }
 
+    private val trackEmptyAdapter by lazy { EmptyAdapter() }
     private val trackAdapter by lazy {
         getFeedAdapter(trackFeedData, feedListener, true)
     }
@@ -90,6 +94,7 @@ class MediaDetailsFragment : Fragment(R.layout.fragment_media_details) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         val binding = FragmentMediaDetailsBinding.bind(view)
+        val uiViewModel by activityViewModel<UiViewModel>()
         FastScrollerHelper.applyTo(binding.recyclerView)
         applyInsets(viewModel.uiResultFlow) {
             val item = viewModel.uiResultFlow.value?.getOrNull()?.item as? Playlist
@@ -102,13 +107,65 @@ class MediaDetailsFragment : Fragment(R.layout.fragment_media_details) {
         }
         observe(viewModel.uiResultFlow) { result ->
             mediaHeaderAdapter.result = result
+            val item = result?.getOrNull()?.item
+            val (extensionId, _, loaded) = viewModel.getItem() ?: Triple("", null, false)
+            if (item is Playlist) {
+                if (item.isEditable) {
+                    trackEmptyAdapter.updateConfig(
+                        EmptyAdapter.Config(
+                            title = getString(R.string.empty_playlist_title),
+                            subtitle = getString(R.string.empty_playlist_editable_desc),
+                            primaryButton = EmptyAdapter.ButtonConfig(
+                                text = getString(R.string.add_songs),
+                                icon = R.drawable.ic_playlist_add
+                            ) {
+                                requireActivity().openFragment<EditPlaylistFragment>(
+                                    null,
+                                    EditPlaylistFragment.getBundle(extensionId, item, loaded)
+                                )
+                            },
+                            secondaryButton = EmptyAdapter.ButtonConfig(
+                                text = getString(R.string.explore_music),
+                                icon = R.drawable.ic_search_filled
+                            ) {
+                                uiViewModel.navigation.value = 1
+                            }
+                        )
+                    )
+                } else {
+                    trackEmptyAdapter.updateConfig(
+                        EmptyAdapter.Config(
+                            title = getString(R.string.empty_playlist_title),
+                            subtitle = getString(R.string.empty_playlist_desc),
+                            primaryButton = EmptyAdapter.ButtonConfig(
+                                text = getString(R.string.explore_music),
+                                icon = R.drawable.ic_search_filled
+                            ) {
+                                uiViewModel.navigation.value = 1
+                            }
+                        )
+                    )
+                }
+            } else {
+                trackEmptyAdapter.updateConfig(
+                    EmptyAdapter.Config(
+                        title = getString(R.string.so_empty),
+                        primaryButton = EmptyAdapter.ButtonConfig(
+                            text = getString(R.string.explore_music),
+                            icon = R.drawable.ic_search_filled
+                        ) {
+                            uiViewModel.navigation.value = 1
+                        }
+                    )
+                )
+            }
         }
         getTouchHelper(feedListener).attachToRecyclerView(binding.recyclerView)
         configureGridLayout(
             binding.recyclerView,
             GridAdapter.Concat(
                 mediaHeaderAdapter,
-                trackAdapter.withLoading(this),
+                trackAdapter.withLoading(this, trackEmptyAdapter),
                 lineAdapter,
                 feedAdapter.withLoading(this)
             )

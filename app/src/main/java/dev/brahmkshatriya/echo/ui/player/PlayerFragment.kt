@@ -138,7 +138,7 @@ class PlayerFragment : Fragment() {
         var leftPadding = 0
         var rightPadding = 0
 
-        val maxElevation = 4.dpToPx(requireContext()).toFloat()
+        val maxElevation = 6.dpToPx(requireContext()).toFloat()
         fun updateOutline() {
             val offset = max(0f, uiViewModel.playerSheetOffset.value)
             val inv = 1 - offset
@@ -364,6 +364,9 @@ class PlayerFragment : Fragment() {
                 playPauseListener.enabled = false
                 playerControls.trackPlayPause.isChecked = it
                 playerCollapsedContainer.collapsedTrackPlayPause.isChecked = it
+                val playPauseDesc = getString(if (it) R.string.pause else R.string.play)
+                playerControls.trackPlayPause.contentDescription = playPauseDesc
+                playerCollapsedContainer.collapsedTrackPlayPause.contentDescription = playPauseDesc
                 playPauseListener.enabled = true
             }
         }
@@ -422,13 +425,24 @@ class PlayerFragment : Fragment() {
             )
         }
 
+        fun updateRepeatDescription(repeatMode: Int) {
+            val desc = when (repeatMode) {
+                REPEAT_MODE_ALL -> R.string.repeat_all
+                REPEAT_MODE_ONE -> R.string.repeat_one
+                else -> R.string.repeat_off
+            }
+            binding.playerControls.trackRepeat.contentDescription = getString(desc)
+        }
+
         binding.playerControls.trackRepeat.icon =
             drawables[repeatModes.indexOf(viewModel.repeatMode.value)]
+        updateRepeatDescription(viewModel.repeatMode.value)
 
         fun changeRepeatDrawable(repeatMode: Int) = binding.playerControls.trackRepeat.run {
             val index = repeatModes.indexOf(repeatMode)
             icon = animatedVectorDrawables[index]
             (icon as Animatable).start()
+            updateRepeatDescription(repeatMode)
         }
 
         binding.playerControls.run {
@@ -460,6 +474,8 @@ class PlayerFragment : Fragment() {
             observe(viewModel.shuffleMode) {
                 shuffleListener.enabled = false
                 trackShuffle.isChecked = it
+                trackShuffle.contentDescription =
+                    getString(if (it) R.string.shuffle_on else R.string.shuffle_off)
                 shuffleListener.enabled = true
             }
 
@@ -484,7 +500,11 @@ class PlayerFragment : Fragment() {
         }
     }
 
-    private val likeListener = CheckBoxListener { viewModel.likeCurrent(it) }
+    private val likeListener = CheckBoxListener {
+        viewModel.likeCurrent(it)
+        binding?.playerControls?.trackHeart?.contentDescription =
+            getString(if (it) R.string.liked else R.string.like)
+    }
 
     private fun configureColors() {
         observe(viewModel.playerState.current) { adapter.onCurrentUpdated() }
@@ -589,6 +609,8 @@ class PlayerFragment : Fragment() {
             trackArtist.movementMethod = LinkMovementMethod.getInstance()
             likeListener.enabled = false
             trackHeart.isChecked = item.isLiked
+            trackHeart.contentDescription =
+                getString(if (item.isLiked) R.string.liked else R.string.like)
             likeListener.enabled = true
             lifecycleScope.launch {
                 val isTrackClient = viewModel.isLikeClient(item.extensionId)

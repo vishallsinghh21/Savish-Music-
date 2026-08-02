@@ -16,12 +16,15 @@ import dev.brahmkshatriya.echo.databinding.FragmentLibraryBinding
 import dev.brahmkshatriya.echo.extensions.ExtensionUtils.getAs
 import dev.brahmkshatriya.echo.extensions.ExtensionUtils.isClient
 import dev.brahmkshatriya.echo.extensions.cache.Cached
+import dev.brahmkshatriya.echo.extensions.builtin.offline.OfflineExtension
 import dev.brahmkshatriya.echo.ui.common.GridAdapter.Companion.configureGridLayout
 import dev.brahmkshatriya.echo.ui.common.SnackBarHandler.Companion.createSnack
 import dev.brahmkshatriya.echo.ui.common.UiViewModel
 import dev.brahmkshatriya.echo.ui.common.UiViewModel.Companion.applyBackPressCallback
 import dev.brahmkshatriya.echo.ui.common.UiViewModel.Companion.applyInsets
 import dev.brahmkshatriya.echo.ui.common.UiViewModel.Companion.configure
+import dev.brahmkshatriya.echo.ui.extensions.add.ExtensionsAddBottomSheet
+import dev.brahmkshatriya.echo.ui.feed.EmptyAdapter
 import dev.brahmkshatriya.echo.ui.feed.FeedAdapter.Companion.getFeedAdapter
 import dev.brahmkshatriya.echo.ui.feed.FeedAdapter.Companion.getTouchHelper
 import dev.brahmkshatriya.echo.ui.feed.FeedClickListener.Companion.getFeedListener
@@ -57,6 +60,7 @@ class LibraryFragment : Fragment(R.layout.fragment_library) {
 
     private val listener by lazy { getFeedListener(requireParentFragment()) }
     private val feedAdapter by lazy { getFeedAdapter(feedData, listener) }
+    private val emptyAdapter by lazy { EmptyAdapter() }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         val binding = FragmentLibraryBinding.bind(view)
@@ -81,7 +85,7 @@ class LibraryFragment : Fragment(R.layout.fragment_library) {
         getTouchHelper(listener).attachToRecyclerView(binding.recyclerView)
         configureGridLayout(
             binding.recyclerView,
-            feedAdapter.withLoading(this, headerAdapter)
+            feedAdapter.withLoading(this, emptyAdapter, headerAdapter)
         )
         binding.swipeRefresh.run {
             setOnRefreshListener { feedData.refresh() }
@@ -90,10 +94,50 @@ class LibraryFragment : Fragment(R.layout.fragment_library) {
             }
         }
 
+        val parent = requireParentFragment()
         observe(feedData.current) {
             binding.createPlaylist.isVisible = it?.isClient<PlaylistEditClient>() ?: false
+            val isOffline = it?.id == OfflineExtension.metadata.id
+            if (isOffline) {
+                emptyAdapter.updateConfig(
+                    EmptyAdapter.Config(
+                        title = getString(R.string.empty_library_offline_title),
+                        subtitle = getString(R.string.empty_library_offline_desc),
+                        primaryButton = EmptyAdapter.ButtonConfig(
+                            text = getString(R.string.scan_device_folders),
+                            icon = R.drawable.ic_refresh
+                        ) {
+                            feedData.refresh()
+                        },
+                        secondaryButton = EmptyAdapter.ButtonConfig(
+                            text = getString(R.string.add_extension_source),
+                            icon = R.drawable.ic_extension
+                        ) {
+                            ExtensionsAddBottomSheet().show(parent.parentFragmentManager, null)
+                        }
+                    )
+                )
+            } else {
+                emptyAdapter.updateConfig(
+                    EmptyAdapter.Config(
+                        title = getString(R.string.empty_library_title),
+                        subtitle = getString(R.string.empty_library_desc),
+                        primaryButton = EmptyAdapter.ButtonConfig(
+                            text = getString(R.string.search_music),
+                            icon = R.drawable.ic_search_filled
+                        ) {
+                            uiViewModel.navigation.value = 1
+                        },
+                        secondaryButton = EmptyAdapter.ButtonConfig(
+                            text = getString(R.string.add_extension_source),
+                            icon = R.drawable.ic_extension
+                        ) {
+                            ExtensionsAddBottomSheet().show(parent.parentFragmentManager, null)
+                        }
+                    )
+                )
+            }
         }
-        val parent = requireParentFragment()
         binding.createPlaylist.setOnClickListener {
             CreatePlaylistBottomSheet().show(parent.parentFragmentManager, null)
         }

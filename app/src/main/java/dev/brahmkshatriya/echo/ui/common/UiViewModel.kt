@@ -152,7 +152,7 @@ class UiViewModel(
     fun setPlayerInsets(context: Context, isVisible: Boolean) {
         val insets = if (isVisible) {
             val height = context.resources.getDimensionPixelSize(R.dimen.collapsed_cover_size)
-            Insets(bottom = height + 8.dpToPx(context))
+            Insets(bottom = height + 16.dpToPx(context))
         } else Insets()
         playerInsets.value = insets
     }
@@ -423,7 +423,7 @@ class UiViewModel(
             val combined =
                 viewModel.run { playerNavViewInsets.combine(systemInsets) { nav, _ -> nav } }
             observe(combined) {
-                val bottomPadding = 8.dpToPx(view.context)
+                val bottomPadding = 16.dpToPx(view.context)
                 val collapsedCoverSize =
                     view.resources.getDimensionPixelSize(R.dimen.collapsed_cover_size) + bottomPadding
                 val peekHeight =

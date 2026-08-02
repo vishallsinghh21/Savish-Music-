@@ -78,7 +78,7 @@
                     android:id="@+id/playlistItemAuthor"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:alpha="0.66"
+                    android:alpha="0.80"
                     android:ellipsize="marquee"
                     android:maxLines="1"
                     tools:text="Author" />
@@ -114,6 +114,7 @@
                 style="?attr/materialIconButtonStyle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:contentDescription="@string/reorder"
                 android:padding="8dp"
                 app:icon="@drawable/ic_drag_20dp"
                 app:iconSize="24dp"

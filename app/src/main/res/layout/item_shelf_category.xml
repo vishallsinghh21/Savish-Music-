@@ -51,7 +51,7 @@
                 android:id="@+id/subtitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:alpha="0.66"
+                android:alpha="0.80"
                 android:ellipsize="end"
                 android:maxLines="1"
                 tools:text="@tools:sample/first_names" />

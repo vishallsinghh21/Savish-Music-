@@ -31,7 +31,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="24dp"
-            android:alpha="0.66"
+            android:alpha="0.80"
             android:gravity="center"
             android:text="@string/audio_fx_desc"
             android:textColor="?attr/colorOnSurface"

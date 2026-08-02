@@ -41,7 +41,7 @@
             android:id="@android:id/summary"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:alpha="0.66"
+            android:alpha="0.80"
             android:textColor="?attr/colorOnSurfaceVariant"
             tools:text="Summary" />
 

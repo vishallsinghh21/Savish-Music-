@@ -9,4 +9,6 @@
     <color name="amoled_bg_semi">#54FFFFFF</color>
     <color name="amoled_fg">@color/black</color>
     <color name="amoled_fg_semi">#14000000</color>
+    <color name="secondary_text_calibrated">#556575</color>
+    <color name="secondary_text">#556575</color>
 </resources>

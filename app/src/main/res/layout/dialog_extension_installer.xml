@@ -58,7 +58,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
-            android:alpha="0.66"
+            android:alpha="0.80"
             android:ellipsize="end"
             tools:text="@tools:sample/lorem" />
 
@@ -75,7 +75,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:alpha="0.66"
+            android:alpha="0.80"
             android:text="@string/installation_type_summary" />
 
         <TextView

@@ -4,4 +4,6 @@
     <color name="amoled_bg_semi">#54000000</color>
     <color name="amoled_fg">@color/white</color>
     <color name="amoled_fg_semi">#1AFFFFFF</color>
+    <color name="secondary_text_calibrated">#94A4B0</color>
+    <color name="secondary_text">#94A4B0</color>
 </resources>

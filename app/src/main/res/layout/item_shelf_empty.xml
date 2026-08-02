@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:gravity="center"
     android:orientation="vertical"
-    android:paddingVertical="48dp">
+    android:paddingVertical="48dp"
+    android:paddingHorizontal="24dp">
 
     <FrameLayout
+        android:id="@+id/emptyIconContainer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content">
 
@@ -24,6 +28,7 @@
             android:backgroundTint="?navBarBackground" />
 
         <TextView
+            android:id="@+id/emptyIconText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
@@ -33,13 +38,71 @@
             android:textAppearance="@style/TextAppearance.Material3.DisplayMedium"
             android:textColor="?navBarForeground"
             android:typeface="monospace" />
+
+        <ImageView
+            android:id="@+id/emptyIconImage"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center"
+            android:visibility="gone"
+            app:tint="?navBarForeground"
+            tools:src="@drawable/ic_library_music"
+            tools:visibility="visible" />
     </FrameLayout>
 
     <TextView
+        android:id="@+id/emptyTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="24dp"
-        android:textSize="16sp"
-        android:text="@string/so_empty" />
+        android:layout_marginTop="20dp"
+        android:gravity="center"
+        android:text="@string/so_empty"
+        android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+        android:textColor="?android:attr/textColorPrimary" />
+
+    <TextView
+        android:id="@+id/emptySubtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:gravity="center"
+        android:visibility="gone"
+        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+        android:textColor="?android:attr/textColorSecondary"
+        tools:text="Search for music or add extension sources to build your library."
+        tools:visibility="visible" />
+
+    <LinearLayout
+        android:id="@+id/emptyActionsContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/primaryActionButton"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="4dp"
+            app:iconPadding="8dp"
+            tools:text="Scan Device Folders"
+            tools:icon="@drawable/ic_refresh" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/secondaryActionButton"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="4dp"
+            app:iconPadding="8dp"
+            android:visibility="gone"
+            tools:text="Add Extension Source"
+            tools:icon="@drawable/ic_extension"
+            tools:visibility="visible" />
+    </LinearLayout>
 
 </LinearLayout>

@@ -152,7 +152,16 @@ class FeedAdapter(
         }
     }.flatten()
 
-    fun withLoading(fragment: Fragment, vararg before: GridAdapter): GridAdapter.Concat {
+    fun withLoading(
+        fragment: Fragment,
+        vararg before: GridAdapter,
+    ): GridAdapter.Concat = withLoading(fragment, EmptyAdapter(), *before)
+
+    fun withLoading(
+        fragment: Fragment,
+        emptyAdapter: EmptyAdapter,
+        vararg before: GridAdapter,
+    ): GridAdapter.Concat {
         val tabs = TabsAdapter<FeedTab>({ tab.title }) { view, index, tab ->
             listener.onTabSelected(view, tab.feedId, tab.extensionId, index)
         }
@@ -166,7 +175,7 @@ class FeedAdapter(
         val loadStateListener = fragment.createListener { retry() }
         val header = FeedLoadingAdapter(loadStateListener) { LoadingViewHolder(it) }
         val footer = FeedLoadingAdapter(loadStateListener) { LoadingViewHolder(it) }
-        val empty = EmptyAdapter()
+        val empty = emptyAdapter
         fragment.observe(
             loadStateFlow.combine(viewModel.shouldShowEmpty) { a, b -> a to b }
         ) { (loadStates, shouldShowEmpty) ->
