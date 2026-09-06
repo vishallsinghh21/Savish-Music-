@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#070A0F"
-    tools:context="dev.brahmkshatriya.echo.ui.search.SearchFragment">
+    tools:context="dev.brahmkshatriya.echo.ui.main.search.SearchFragment">
 
     <!-- Ambient Aura Glow (Synced with active platform color) -->
     <View
@@ -71,7 +71,7 @@
                 android:background="@drawable/shape_rounded_item_corner"
                 android:backgroundTint="#1AFFFFFF"
                 android:padding="8dp"
-                android:src="@drawable/ic_settings"
+                android:src="@android:drawable/ic_menu_manage"
                 app:tint="@android:color/white" />
         </RelativeLayout>
 
