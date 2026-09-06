@@ -79,8 +79,7 @@ class StreamableLoader(
                 )
             }
         }
-        
-        val primaryResult = withClient(mediaItem) {
+        return withClient(mediaItem) {
             runCatching {
                 val isPlayable = mediaItem.track.playableString(app.context)
                 if (isPlayable != null) throw Exception(isPlayable)
@@ -90,41 +89,12 @@ class StreamableLoader(
                 ).getOrThrow() as Streamable.Media.Server
             }
         }
-
-        // Silent Fallback: Spotify par Error 403 aane par automatically YouTube/Alternative extension se audio resolve karega
-        if (primaryResult.isFailure && mediaItem.extensionId.contains("spotify", ignoreCase = true)) {
-            val fallbackResult = resolveFallbackStream(mediaItem)
-            if (fallbackResult.isSuccess) {
-                return fallbackResult
-            }
-        }
-
-        return primaryResult
-    }
-
-    private suspend fun resolveFallbackStream(mediaItem: MediaItem): Result<Streamable.Media.Server> = runCatching {
-        val fallbackExtension = extensionListFlow.value.firstOrNull {
-            val id = it.id.lowercase()
-            (id.contains("youtube") || id.contains("saavn")) && it.id != mediaItem.extensionId
-        } ?: throw Exception("No fallback extension available")
-
-        val query = "${mediaItem.track.title} ${mediaItem.track.artists.firstOrNull()?.name.orEmpty()}".trim()
-        val searchResult = fallbackExtension.searchTrack(query).firstOrNull()
-            ?: throw Exception("Track not found on fallback extension")
-
-        val loadedTrack = Cached.loadMedia(app, fallbackExtension, MediaState.Unloaded(searchResult)).getOrThrow()
-        val firstServer = loadedTrack.item.servers.firstOrNull()
-            ?: throw Exception("No server on fallback track")
-
-        loadStreamableMedia(
-            app, fallbackExtension, loadedTrack.item, firstServer
-        ).getOrThrow() as Streamable.Media.Server
     }
 
     private suspend fun loadBackground(mediaItem: MediaItem): Result<Streamable.Media.Background> {
         val streams = mediaItem.track.backgrounds
         val index = mediaItem.backgroundIndex
-        val streamable = streams.getOrNull(index) ?: return Result.failure(Exception("Background not found"))
+        val streamable = streams[index]
         return withClient(mediaItem) {
             runCatching {
                 loadStreamableMedia(
@@ -137,7 +107,7 @@ class StreamableLoader(
     private suspend fun loadSubtitle(mediaItem: MediaItem): Result<Streamable.Media.Subtitle> {
         val streams = mediaItem.track.subtitles
         val index = mediaItem.subtitleIndex
-        val streamable = streams.getOrNull(index) ?: return Result.failure(Exception("Subtitle not found"))
+        val streamable = streams[index]
         return withClient(mediaItem) {
             runCatching {
                 loadStreamableMedia(
