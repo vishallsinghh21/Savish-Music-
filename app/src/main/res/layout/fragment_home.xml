@@ -33,7 +33,7 @@
             android:layout_height="wrap_content"
             android:paddingHorizontal="22dp"
             android:paddingTop="38dp"
-            android:paddingBottom="10dp">
+            android:paddingBottom="8dp">
 
             <LinearLayout
                 android:id="@+id/syncStatusContainer"
@@ -92,7 +92,7 @@
                 app:strokeWidth="2dp" />
         </androidx.constraintlayout.widget.ConstraintLayout>
 
-        <!-- Large Platform Capsules -->
+        <!-- Large Platform Capsules (Fixed Brand Dot, Pure White Text) -->
         <HorizontalScrollView
             android:id="@+id/scrollCapsules"
             android:layout_width="match_parent"
@@ -114,12 +114,12 @@
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/capsuleAllMedia"
                     android:layout_width="wrap_content"
-                    android:layout_height="46dp"
+                    android:layout_height="48dp"
                     android:layout_marginEnd="10dp"
                     android:clickable="true"
                     android:focusable="true"
-                    app:cardBackgroundColor="#1D2734"
-                    app:cardCornerRadius="23dp"
+                    app:cardBackgroundColor="#161F2B"
+                    app:cardCornerRadius="24dp"
                     app:cardElevation="0dp"
                     app:strokeColor="#00E5FF"
                     app:strokeWidth="2.5dp">
@@ -132,8 +132,9 @@
                         android:paddingHorizontal="18dp">
 
                         <View
-                            android:layout_width="8dp"
-                            android:layout_height="8dp"
+                            android:id="@+id/dotAllMedia"
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
                             android:background="@android:drawable/presence_online" />
 
                         <TextView
@@ -142,7 +143,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="8dp"
                             android:text="All media"
-                            android:textColor="#00E5FF"
+                            android:textColor="#FFFFFF"
                             android:textSize="15sp"
                             android:textStyle="bold" />
                     </LinearLayout>
@@ -152,15 +153,15 @@
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/capsuleOffline"
                     android:layout_width="wrap_content"
-                    android:layout_height="46dp"
+                    android:layout_height="48dp"
                     android:layout_marginEnd="10dp"
                     android:clickable="true"
                     android:focusable="true"
                     app:cardBackgroundColor="#141B22"
-                    app:cardCornerRadius="23dp"
+                    app:cardCornerRadius="24dp"
                     app:cardElevation="0dp"
                     app:strokeColor="#25313D"
-                    app:strokeWidth="1.5dp">
+                    app:strokeWidth="1.2dp">
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -170,8 +171,9 @@
                         android:paddingHorizontal="18dp">
 
                         <View
-                            android:layout_width="8dp"
-                            android:layout_height="8dp"
+                            android:id="@+id/dotOffline"
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
                             android:background="@android:drawable/presence_away" />
 
                         <TextView
@@ -180,7 +182,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="8dp"
                             android:text="Offline"
-                            android:textColor="#9CA3AF"
+                            android:textColor="#FFFFFF"
                             android:textSize="15sp" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
@@ -189,15 +191,15 @@
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/capsuleDeezer"
                     android:layout_width="wrap_content"
-                    android:layout_height="46dp"
+                    android:layout_height="48dp"
                     android:layout_marginEnd="10dp"
                     android:clickable="true"
                     android:focusable="true"
                     app:cardBackgroundColor="#141B22"
-                    app:cardCornerRadius="23dp"
+                    app:cardCornerRadius="24dp"
                     app:cardElevation="0dp"
                     app:strokeColor="#25313D"
-                    app:strokeWidth="1.5dp">
+                    app:strokeWidth="1.2dp">
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -207,8 +209,9 @@
                         android:paddingHorizontal="18dp">
 
                         <View
-                            android:layout_width="8dp"
-                            android:layout_height="8dp"
+                            android:id="@+id/dotDeezer"
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
                             android:background="@android:drawable/presence_online" />
 
                         <TextView
@@ -217,7 +220,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="8dp"
                             android:text="Deezer"
-                            android:textColor="#9CA3AF"
+                            android:textColor="#FFFFFF"
                             android:textSize="15sp" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
@@ -226,15 +229,15 @@
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/capsuleYouTube"
                     android:layout_width="wrap_content"
-                    android:layout_height="46dp"
+                    android:layout_height="48dp"
                     android:layout_marginEnd="10dp"
                     android:clickable="true"
                     android:focusable="true"
                     app:cardBackgroundColor="#141B22"
-                    app:cardCornerRadius="23dp"
+                    app:cardCornerRadius="24dp"
                     app:cardElevation="0dp"
                     app:strokeColor="#25313D"
-                    app:strokeWidth="1.5dp">
+                    app:strokeWidth="1.2dp">
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -244,8 +247,9 @@
                         android:paddingHorizontal="18dp">
 
                         <View
-                            android:layout_width="8dp"
-                            android:layout_height="8dp"
+                            android:id="@+id/dotYouTube"
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
                             android:background="@android:drawable/presence_busy" />
 
                         <TextView
@@ -254,7 +258,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="8dp"
                             android:text="YouTube"
-                            android:textColor="#9CA3AF"
+                            android:textColor="#FFFFFF"
                             android:textSize="15sp" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
@@ -263,15 +267,15 @@
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/capsuleSpotify"
                     android:layout_width="wrap_content"
-                    android:layout_height="46dp"
+                    android:layout_height="48dp"
                     android:layout_marginEnd="10dp"
                     android:clickable="true"
                     android:focusable="true"
                     app:cardBackgroundColor="#141B22"
-                    app:cardCornerRadius="23dp"
+                    app:cardCornerRadius="24dp"
                     app:cardElevation="0dp"
                     app:strokeColor="#25313D"
-                    app:strokeWidth="1.5dp">
+                    app:strokeWidth="1.2dp">
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -281,8 +285,9 @@
                         android:paddingHorizontal="18dp">
 
                         <View
-                            android:layout_width="8dp"
-                            android:layout_height="8dp"
+                            android:id="@+id/dotSpotify"
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
                             android:background="@android:drawable/presence_online" />
 
                         <TextView
@@ -291,7 +296,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="8dp"
                             android:text="Spotify"
-                            android:textColor="#9CA3AF"
+                            android:textColor="#FFFFFF"
                             android:textSize="15sp" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
@@ -300,15 +305,15 @@
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/capsuleJioSaavn"
                     android:layout_width="wrap_content"
-                    android:layout_height="46dp"
+                    android:layout_height="48dp"
                     android:layout_marginEnd="10dp"
                     android:clickable="true"
                     android:focusable="true"
                     app:cardBackgroundColor="#141B22"
-                    app:cardCornerRadius="23dp"
+                    app:cardCornerRadius="24dp"
                     app:cardElevation="0dp"
                     app:strokeColor="#25313D"
-                    app:strokeWidth="1.5dp">
+                    app:strokeWidth="1.2dp">
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -318,8 +323,9 @@
                         android:paddingHorizontal="18dp">
 
                         <View
-                            android:layout_width="8dp"
-                            android:layout_height="8dp"
+                            android:id="@+id/dotJioSaavn"
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
                             android:background="@android:drawable/presence_away" />
 
                         <TextView
@@ -328,10 +334,11 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="8dp"
                             android:text="JioSaavn"
-                            android:textColor="#9CA3AF"
+                            android:textColor="#FFFFFF"
                             android:textSize="15sp" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
+
             </LinearLayout>
         </HorizontalScrollView>
 
@@ -406,7 +413,7 @@
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Content Feed: Direct Liked Music, Playlists, Speed Dial -->
+    <!-- Clean Direct Music Feed (All legacy headers and empty boxes removed) -->
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipeRefresh"
         android:layout_width="match_parent"
@@ -423,25 +430,24 @@
             android:contentDescription="@string/home"
             android:orientation="vertical"
             android:paddingHorizontal="16dp"
-            android:paddingBottom="24dp"
+            android:paddingBottom="16dp"
             app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
             tools:listitem="@layout/item_shelf_lists" />
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-    <!-- Relocated Play/Shuffle Bottom Control Bar (Above Mini Player & Bottom Nav) -->
+    <!-- Bottom Playback Actions Bar (Directly positioned above floating nav dock) -->
     <LinearLayout
         android:id="@+id/bottomActionsBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingHorizontal="20dp"
+        android:paddingHorizontal="22dp"
         android:paddingTop="6dp"
-        android:paddingBottom="100dp"
+        android:paddingBottom="104dp"
         app:layout_constraintBottom_toBottomOf="parent">
 
-        <!-- Shuffle Button -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/btnShuffleAction"
             android:layout_width="44dp"
@@ -462,7 +468,6 @@
                 app:tint="#FF69B4" />
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Play Button -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/btnPlayAction"
             android:layout_width="wrap_content"
@@ -505,7 +510,6 @@
             android:layout_height="1dp"
             android:layout_weight="1" />
 
-        <!-- Sort / Filter Button -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/btnSortAction"
             android:layout_width="44dp"
