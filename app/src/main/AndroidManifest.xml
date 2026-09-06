@@ -27,6 +27,15 @@
         tools:ignore="QueryAllPackagesPermission" />
     <uses-permission android:name="android.permission.DETECT_SCREEN_CAPTURE" />
 
+    <queries>
+        <intent>
+            <action android:name="dev.brahmkshatriya.echo.EXTENSION" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+        </intent>
+    </queries>
+
     <application
         android:name=".MainApplication"
         android:appCategory="audio"
