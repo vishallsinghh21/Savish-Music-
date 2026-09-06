@@ -1,11 +1,14 @@
 package dev.brahmkshatriya.echo.ui.main
 
+import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Bundle
+import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
@@ -33,7 +36,6 @@ import dev.brahmkshatriya.echo.ui.feed.FeedClickListener.Companion.getFeedListen
 import dev.brahmkshatriya.echo.ui.feed.FeedData
 import dev.brahmkshatriya.echo.ui.feed.FeedViewModel
 import dev.brahmkshatriya.echo.ui.main.MainFragment.Companion.applyInsets
-import dev.brahmkshatriya.echo.utils.ContextUtils.dpToPx
 import dev.brahmkshatriya.echo.utils.ContextUtils.observe
 import dev.brahmkshatriya.echo.utils.ui.AnimationUtils.setupTransition
 import kotlinx.coroutines.flow.combine
@@ -65,6 +67,14 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private val listener by lazy { getFeedListener(requireParentFragment()) }
     private val feedAdapter by lazy { getFeedAdapter(feedData, listener) }
 
+    private fun dp(ctx: Context, value: Float): Int {
+        return TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP,
+            value,
+            ctx.resources.displayMetrics
+        ).toInt()
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         val binding = FragmentHomeBinding.bind(view)
         setupTransition(view, false, MaterialSharedAxis.Y)
@@ -72,7 +82,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             binding.swipeRefresh.configure(it)
         }
         val uiViewModel by activityViewModel<UiViewModel>()
-        
+
         observe(uiViewModel.navigationReselected) {
             if (it != 0) return@observe
             ExtensionsListBottomSheet.newInstance(ExtensionType.MUSIC)
@@ -87,7 +97,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         applyBackPressCallback()
         getTouchHelper(listener).attachToRecyclerView(binding.recyclerView)
 
-        // Clean layout: Unified Extension header completely bypassed
+        // Bypassing empty Unified Extension container
         configureGridLayout(
             binding.recyclerView,
             feedAdapter.withLoading(this)
@@ -104,7 +114,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     }
 
     private fun renderDynamicCapsules(binding: FragmentHomeBinding) {
-        val ctx = requireContext()
+        val ctx = context ?: return
         val container = binding.layoutCapsulesContainer
         container.removeAllViews()
 
@@ -127,17 +137,10 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         val items = mutableListOf<CapsuleItem>()
         items.add(CapsuleItem("All media", "#00E5FF"))
         items.add(CapsuleItem("Offline", "#FF9900"))
-
-        try {
-            extensionLoader.loadedExtensions.value.forEach { ext ->
-                items.add(CapsuleItem(ext.name, resolveColor(ext.name)))
-            }
-        } catch (_: Exception) {
-            items.add(CapsuleItem("YouTube", "#FF0033"))
-            items.add(CapsuleItem("Spotify", "#1DB954"))
-            items.add(CapsuleItem("JioSaavn", "#00D2C4"))
-            items.add(CapsuleItem("Deezer", "#A238FF"))
-        }
+        items.add(CapsuleItem("YouTube", "#FF0033"))
+        items.add(CapsuleItem("Spotify", "#1DB954"))
+        items.add(CapsuleItem("JioSaavn", "#00D2C4"))
+        items.add(CapsuleItem("Deezer", "#A238FF"))
 
         val cards = mutableListOf<Pair<MaterialCardView, TextView>>()
 
@@ -148,16 +151,16 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             val textOff = Color.parseColor("#9BA8B5")
 
             cards.forEach { (c, t) ->
-                val active = c == selectedCard
+                val active = (c == selectedCard)
                 if (active) {
                     c.strokeColor = activeColor
-                    c.strokeWidth = ctx.dpToPx(2.5f)
+                    c.strokeWidth = dp(ctx, 2.5f)
                     c.setCardBackgroundColor(ColorStateList.valueOf(Color.parseColor("#1C2632")))
                     t.setTextColor(activeColor)
                     t.typeface = Typeface.DEFAULT_BOLD
                 } else {
                     c.strokeColor = strokeOff
-                    c.strokeWidth = ctx.dpToPx(1f)
+                    c.strokeWidth = dp(ctx, 1f)
                     c.setCardBackgroundColor(ColorStateList.valueOf(bgOff))
                     t.setTextColor(textOff)
                     t.typeface = Typeface.DEFAULT
@@ -174,31 +177,31 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
         items.forEachIndexed { index, item ->
             val card = MaterialCardView(ctx).apply {
-                radius = ctx.dpToPx(24f).toFloat()
-                strokeWidth = ctx.dpToPx(1f)
+                radius = dp(ctx, 24f).toFloat()
+                strokeWidth = dp(ctx, 1f)
                 strokeColor = Color.parseColor("#27333F")
                 setCardBackgroundColor(ColorStateList.valueOf(Color.parseColor("#141B22")))
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    ctx.dpToPx(48f)
-                ).apply {
-                    marginEnd = ctx.dpToPx(10f)
-                }
+                val lp = ViewGroup.MarginLayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    dp(ctx, 48f)
+                )
+                lp.setMargins(0, 0, dp(ctx, 10f), 0)
+                layoutParams = lp
             }
 
             val row = LinearLayout(ctx).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER
-                setPadding(ctx.dpToPx(16f), 0, ctx.dpToPx(16f), 0)
+                setPadding(dp(ctx, 16f), 0, dp(ctx, 16f), 0)
             }
 
             val dot = View(ctx).apply {
-                layoutParams = LinearLayout.LayoutParams(
-                    ctx.dpToPx(8f),
-                    ctx.dpToPx(8f)
-                ).apply {
-                    marginEnd = ctx.dpToPx(8f)
-                }
+                val dotLp = ViewGroup.MarginLayoutParams(
+                    dp(ctx, 8f),
+                    dp(ctx, 8f)
+                )
+                dotLp.setMargins(0, 0, dp(ctx, 8f), 0)
+                layoutParams = dotLp
                 background = ContextCompat.getDrawable(ctx, android.R.drawable.presence_online)
                 backgroundTintList = ColorStateList.valueOf(Color.parseColor(item.colorHex))
             }
