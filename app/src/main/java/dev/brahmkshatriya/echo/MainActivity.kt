@@ -56,14 +56,14 @@ open class MainActivity : AppCompatActivity() {
             else SystemBarStyle.light(TRANSPARENT, TRANSPARENT)
         )
 
-        setupNavBarAndInsets(uiViewModel, binding.root, binding.navView as NavigationBarView)
+        val navBar = binding.navView as NavigationBarView
+        setupNavBarAndInsets(uiViewModel, binding.root, navBar)
 
-        // Handle Floating Bottom Bar Extensions Button Trigger
-        binding.navView.setOnItemSelectedListener { item ->
+        navBar.setOnItemSelectedListener { item ->
             if (item.itemId == R.id.nav_extensions) {
                 ExtensionsListBottomSheet.newInstance(ExtensionType.MUSIC)
                     .show(supportFragmentManager, "extensions_bottom_sheet")
-                false // Active page selection change na ho, sheet pop-up ho
+                false
             } else {
                 when (item.itemId) {
                     R.id.homeFragment -> uiViewModel.navigation.value = 0
