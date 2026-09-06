@@ -1,21 +1,38 @@
-# Echo: Music Player
+# Savish Music
 
-<p>
-An Extension-based Music Player for Android, designed with a clean and intuitive UI.
+<p align="center">
+  <b>A modern, extension-based music player for Android with a fluid UI and rich audio playback.</b>
 </p>
 
+---
+
 > [!NOTE]
-> The developer of this application is not liable for any misuse or legal issues arising from its
-> use and is not affiliated with any content providers. This application hosts zero content.
->
-> Echo is intended for offline use only by default; the user manages any external sources. Echo does
-> not condone or supports piracy.
+> Savish Music is an independent, customized music playback platform. The application does not host, upload, or own any copyrighted audio media. All playback streams and metadata depend on external extensions and user configurations.
 
-## Development
-The focus of the app has now been shifted to be [Multiplatform](https://github.com/brahmkshatriya/echo/tree/compose) (using compose). That means Echo Desktop and a remake of Android app is under development. If you still want to download the old version, you can look around in the discord server.
+---
 
-## Official Communities
+## ✨ Features
 
-Join our communities to stay updated and contribute to the discussion:
+- **Fluid Modern UI:** Clean material look with dynamic player coloring based on track artwork.
+- **Modular Extensions:** Flexible architecture allowing third-party extensions for custom sources and feeds.
+- **Audio Effects & Equalizer:** Built-in pitch, bass boost, and equalizer support for tailored listening.
+- **Smart Queue & Caching:** Offline cache management, background playback, and persistent player queues.
+- **Clean Architecture:** Built using modern Android components, Kotlin Coroutines, and Koin injection.
 
-<a href="https://discord.gg/J3WvbBUU8Z" style="margin-right: 10px; display: inline-block;"><img src="https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/discord-round-color-icon.png" alt="Discord" height="40" style="vertical-align: middle;"></a>
+---
+
+## 🛠️ Tech Stack & Dependencies
+
+- **Platform:** Android (Kotlin)
+- **Dependency Injection:** Koin
+- **Media Engine:** AndroidX Media3 (ExoPlayer)
+- **Image Loading:** Coil
+- **Local Persistence:** Room Database
+
+---
+
+## 📦 Building from Source
+
+1. Clone your personal repository:
+   ```bash
+   git clone [https://github.com/vishallsinghh21/Savish-Music.git](https://github.com/vishallsinghh21/Savish-Music.git)
