@@ -6,6 +6,11 @@
         android:title="@string/home" />
 
     <item
+        android:id="@+id/nav_extensions"
+        android:icon="@drawable/ic_extension"
+        android:title="Extensions" />
+
+    <item
         android:id="@+id/searchFragment"
         android:icon="@drawable/anim_search"
         android:title="@string/search" />
@@ -14,5 +19,4 @@
         android:id="@+id/libraryFragment"
         android:icon="@drawable/anim_bookmark"
         android:title="@string/library" />
-
 </menu>
