@@ -6,12 +6,12 @@ on:
       - main
   workflow_dispatch: { }
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      VERSION: $( echo ${{ github.event.head_commit.id }} | cut -c1-7 )
-      COMMIT: $( sed -E "s/(.*) <.*@.*>/\\1/g;t" <<< "${{ github.event.head_commit.message }}" | jq -Rsa . | tail -c +2 | head -c -2 )
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -25,51 +25,39 @@ jobs:
           java-version: 17
           cache: 'gradle'
 
-      - name: Cook KeyStore
-        run: echo "${{ secrets.KEYSTORE_B64 }}" | base64 -d > $GITHUB_WORKSPACE/signing-key.jks
-
-      - name: Cook Google Services
-        run: echo "${{ secrets.GOOGLE_SERVICES_B64 }}" | base64 -d > app/google-services.json
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
 
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      - name: Build with Gradle
-        run: |
-          ./gradlew assembleNightly \
-          -Pandroid.injected.signing.store.file=$GITHUB_WORKSPACE/signing-key.jks \
-          -Pandroid.injected.signing.store.password=${{ secrets.PASSWORD }} \
-          -Pandroid.injected.signing.key.alias=key0 \
-          -Pandroid.injected.signing.key.password=${{ secrets.PASSWORD }}
-          cp app/build/outputs/apk/nightly/app-nightly.apk app/build/${{ env.VERSION }}.apk
+      - name: Build APK with Gradle
+        run: ./gradlew assembleNightly
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+      - name: Prepare and Sign APK for Direct Install
+        run: |
+          mkdir -p release_apks
+          ORIGINAL_APK=$(find app/build/outputs/apk/nightly/ -name "*.apk" | head -n 1)
+          
+          # Generate self-signed temporary keystore taaki phone direct install allow kare
+          keytool -genkey -v -keystore release.keystore -alias savish -keyalg RSA -keysize 2048 -validity 10000 -storepass 123456 -keypass 123456 -dname "CN=SavishMusic, OU=Savish, O=Savish, L=Indore, S=MP, C=IN"
+          
+          # Align aur sign APK
+          BUILD_TOOLS_DIR=$(ls -d $ANDROID_HOME/build-tools/* | tail -1)
+          $BUILD_TOOLS_DIR/zipalign -v -p 4 "$ORIGINAL_APK" release_apks/Savish-Music-aligned.apk
+          $BUILD_TOOLS_DIR/apksigner sign --ks release.keystore --ks-pass pass:123456 --ks-key-alias savish --key-pass pass:123456 --out release_apks/Savish-Music-Nightly.apk release_apks/Savish-Music-aligned.apk
+
+      - name: Publish Direct APK to GitHub Releases
+        uses: softprops/action-gh-release@v2
         with:
-          path: app/build/outputs/apk/nightly/app-nightly.apk
-
-      - name: Upload APK to Discord
-        shell: bash
+          tag_name: "v${{ github.run_number }}"
+          name: "Savish Music Nightly (Build #${{ github.run_number }})"
+          body: |
+            ### 🎵 Savish Music Nightly Build
+            - Commit: `${{ github.sha }}`
+            - Direct Installable APK: Niche diye gaye direct `.apk` file par tap karke download karein aur install karein.
+          files: release_apks/Savish-Music-Nightly.apk
+          draft: false
+          prerelease: false
         env:
-          WEBHOOK: ${{ secrets.DISCORD_NIGHTLY_WEBHOOK }}
-        run: |
-          message=$(echo "@everyone **${{ env.VERSION }}**\n${{ env.COMMIT }}")
-          curl -F "payload_json={\"content\":\"${message}\"}" \
-          -F "echo_beta=@app/build/${{ env.VERSION }}.apk" \
-          ${{ env.WEBHOOK }}
-
-      - name: Upload APK to Telegram
-        shell: bash
-        env:
-          BOT_ID: ${{ secrets.TELEGRAM_BOT_ID }}
-          CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
-          THREAD_ID: ${{ secrets.TELEGRAM_THREAD_ID }}
-        run: |
-          regex='s/[\_\*\[\]\(\)\~\`\>\#\+\-\=\|\{\}\.\!]/\\&/g'
-          message=$(printf "*Nightly Release*\n${{ env.COMMIT }}" | sed -E "$regex")
-          curl -F "chat_id=${{ env.CHANNEL_ID }}" \
-          -F "message_thread_id=${{ env.THREAD_ID }}" \
-          -F "document=@app/build/${{ env.VERSION }}.apk" \
-          -F "caption=${message}" \
-          -F "parse_mode=MarkdownV2" \
-          https://api.telegram.org/bot${{ env.BOT_ID }}/sendDocument
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
