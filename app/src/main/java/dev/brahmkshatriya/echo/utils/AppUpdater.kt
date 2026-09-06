@@ -48,10 +48,7 @@ object AppUpdater {
 
                 else -> return null
             }
-        }.getOrElse {
-            throwableFlow.emit(it)
-            return null
-        }
+        }.getOrNull() ?: return null
 
         messageFlow.emit(
             Message(
@@ -76,22 +73,22 @@ object AppUpdater {
         client: OkHttpClient
     ) = run {
         val (user, repo) = githubRegex.find(updateUrl)?.destructured
-            ?: throw Exception("Invalid Github URL")
+            ?: return@run null
         val url = "https://api.github.com/repos/$user/$repo/releases/latest"
         val request = Request.Builder().url(url).build()
         val res = runCatching {
             client.newCall(request).await().use {
-                it.body.string().toData<GithubReleaseResponse>()
-            }.getOrThrow()
-        }.getOrElse {
-            throw Exception("Failed to fetch latest release", it)
-        }
+                if (!it.isSuccessful) return@run null
+                it.body.string().toData<GithubReleaseResponse>().getOrNull()
+            }
+        }.getOrNull() ?: return@run null
+
         if (res.tagName != currentVersion) {
             res.assets.sortedByDescending {
                 it.name.contains(Build.SUPPORTED_ABIS.first())
             }.firstOrNull {
                 it.name.endsWith("apk")
-            }?.browserDownloadUrl ?: throw Exception("No EApk assets found")
+            }?.browserDownloadUrl
         } else {
             null
         }
@@ -101,15 +98,16 @@ object AppUpdater {
         hash: String,
         githubRepo: String,
         client: OkHttpClient
-    ) = runCatching {
+    ): Long? = runCatching {
         val url =
             "https://api.github.com/repos/$githubRepo/actions/workflows/nightly.yml/runs?per_page=1&conclusion=success"
         val request = Request.Builder().url(url).build()
-        client.newCall(request).await().body.string().toData<GithubRunsResponse>().getOrThrow()
-            .workflowRuns.firstOrNull { it.sha.take(7) != hash }?.id
-    }.getOrElse {
-        throw Exception("Failed to fetch workflow ID", it)
-    }
+        val response = client.newCall(request).await()
+        if (!response.isSuccessful) return null
+        
+        response.body.string().toData<GithubRunsResponse>().getOrNull()
+            ?.workflowRuns?.firstOrNull { it.sha.take(7) != hash }?.id
+    }.getOrNull()
 
     @Serializable
     data class GithubReleaseResponse(
@@ -117,7 +115,7 @@ object AppUpdater {
         val tagName: String,
         @SerialName("created_at")
         val createdAt: String,
-        val assets: List<Asset>
+        val assets: List<Asset> = emptyList()
     ) {
         @Serializable
         data class Asset(
@@ -130,7 +128,7 @@ object AppUpdater {
     @Serializable
     data class GithubRunsResponse(
         @SerialName("workflow_runs")
-        val workflowRuns: List<Run>
+        val workflowRuns: List<Run> = emptyList()
     ) {
         @Serializable
         data class Run(
