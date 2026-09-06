@@ -1,8 +1,11 @@
 package dev.brahmkshatriya.echo.ui.main
 
+import android.graphics.Color
 import android.os.Bundle
 import android.view.View
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import com.google.android.material.card.MaterialCardView
 import com.google.android.material.transition.MaterialSharedAxis
 import dev.brahmkshatriya.echo.R
 import dev.brahmkshatriya.echo.common.clients.HomeFeedClient
@@ -59,6 +62,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             binding.swipeRefresh.configure(it)
         }
         val uiViewModel by activityViewModel<UiViewModel>()
+        
         observe(uiViewModel.navigationReselected) {
             if (it != 0) return@observe
             ExtensionsListBottomSheet.newInstance(ExtensionType.MUSIC)
@@ -72,15 +76,61 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         }
         applyBackPressCallback()
         getTouchHelper(listener).attachToRecyclerView(binding.recyclerView)
+
+        // Unified Extension Header ko hata kar direct clean feed load karna
         configureGridLayout(
             binding.recyclerView,
-            feedAdapter.withLoading(this, HeaderAdapter(this))
+            feedAdapter.withLoading(this)
         )
+
         binding.swipeRefresh.run {
             setOnRefreshListener { feedData.refresh() }
             observe(feedData.isRefreshingFlow) {
                 isRefreshing = it
             }
+        }
+
+        setupCapsuleTriggers(binding)
+    }
+
+    private fun setupCapsuleTriggers(binding: FragmentHomeBinding) {
+        val capsules = listOf(
+            Triple(binding.capsuleAllMedia, "#1500E5FF", "All media"),
+            Triple(binding.capsuleYouTube, "#18FF0033", "YouTube"),
+            Triple(binding.capsuleSpotify, "#181DB954", "Spotify"),
+            Triple(binding.capsuleJioSaavn, "#1800B0FF", "JioSaavn")
+        )
+
+        fun selectCapsule(selectedCard: MaterialCardView, glowColor: String, platformName: String) {
+            capsules.forEach { (card, _, _) ->
+                if (card == selectedCard) {
+                    card.setCardBackgroundColor(Color.parseColor("#1F2933"))
+                    card.strokeWidth = 2
+                } else {
+                    card.setCardBackgroundColor(Color.parseCllolor("#141B22"))
+                    card.strokeWidth = 1
+                }
+            }
+            binding.viewAmbientGlow.setBackgroundColor(Color.parseColor(glowColor))
+            binding.etHomeSearch.hint = "Search songs in Savish $platformName..."
+            
+            // Switch current active extension/feed
+            feedData.current.value?.let { curr ->
+                feedData.refresh()
+            }
+        }
+
+        binding.capsuleAllMedia.setOnClickListener {
+            selectCapsule(binding.capsuleAllMedia, "#1500E5FF", "All media")
+        }
+        binding.capsuleYouTube.setOnClickListener {
+            selectCapsule(binding.capsuleYouTube, "#18FF0033", "YouTube")
+        }
+        binding.capsuleSpotify.setOnClickListener {
+            selectCapsule(binding.capsuleSpotify, "#181DB954", "Spotify")
+        }
+        binding.capsuleJioSaavn.setOnClickListener {
+            selectCapsule(binding.capsuleJioSaavn, "#1800B0FF", "JioSaavn")
         }
     }
 }
