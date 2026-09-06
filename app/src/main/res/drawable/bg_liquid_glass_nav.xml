@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Outer Translucent Glass Drop Shadow Glow -->
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="36dp" />
+            <solid android:color="#1A00E5FF" />
+        </shape>
+    </item>
+
+    <!-- Liquid Specular Layer (iPhone Crystal Depth Effect) -->
+    <item
+        android:bottom="1.5dp"
+        android:left="1.5dp"
+        android:right="1.5dp"
+        android:top="1.5dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="34dp" />
+            <gradient
+                android:angle="270"
+                android:endColor="#200E1726"
+                android:startColor="#332A3B4C"
+                android:type="linear" />
+            <!-- Crystal Specular Edge Highlight -->
+            <stroke
+                android:width="1.8dp"
+                android:color="#4DFFFFFF" />
+        </shape>
+    </item>
+</layer-list>
