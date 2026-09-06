@@ -2,84 +2,119 @@
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/playerMoreRoot"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@android:color/transparent">
+    android:layout_height="match_parent">
 
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/cardContainer"
+    <FrameLayout
+        android:id="@+id/bg_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:cardBackgroundColor="@android:color/transparent"
-        app:cardElevation="0dp"
-        app:cardMaxElevation="0dp"
-        app:strokeColor="@android:color/transparent"
-        app:strokeWidth="0dp">
+        android:translationZ="-2dp">
 
-        <androidx.constraintlayout.widget.ConstraintLayout
+        <com.flaviofaria.kenburnsview.KenBurnsView
+            android:id="@+id/bg_image"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@android:color/transparent">
+            app:layout_constraintBottom_toTopOf="@+id/bg_gradient"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintTop_toTopOf="parent" />
 
-            <!-- Drag Handle Bar -->
-            <com.google.android.material.bottomsheet.BottomSheetDragHandleView
-                android:id="@+id/dragHandle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:alpha="0.6"
+        <androidx.media3.ui.PlayerView
+            android:id="@+id/player_view"
+            android:background="@color/black"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clickable="false"
+            android:visibility="gone"
+            app:use_controller="false"
+            app:show_buffering="always" />
+
+        <include
+            android:id="@+id/bgPanel"
+            layout="@layout/item_click_panels" />
+
+    </FrameLayout>
+
+    <FrameLayout
+        android:id="@+id/fg_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <ImageView
+            android:id="@+id/bg_gradient"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:importantForAccessibility="no"
+            android:translationZ="-2dp"
+            app:layout_constraintBottom_toTopOf="@+id/view_pager"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintTop_toBottomOf="@+id/bg_image"
+            app:srcCompat="@drawable/gradient_track"
+            app:tint="?echoBackground" />
+
+        <View
+            android:id="@+id/bg_collapsed"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/collapsed_cover_size"
+            android:layout_margin="8dp"
+            android:alpha="0.5"
+            android:background="@drawable/shape_rounded_item_corner"
+            android:backgroundTint="?colorSurfaceContainerHigh"
+            android:translationZ="-1dp" />
+
+        <androidx.viewpager2.widget.ViewPager2
+            android:id="@+id/view_pager"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/expanded_toolbar"
+            style="@style/PlayerToolbarStyle" />
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/constraint_layout"
+            style="@style/PlayerExpandedConstraintLayout">
+
+            <View
+                android:id="@+id/player_track_cover_placeholder"
+                style="@style/PlayerTrackCoverContainer"
+                app:layout_constraintBottom_toTopOf="@id/player_controls"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
-            <!-- Completely Clean & Transparent Tabs Header (No glass capsule background) -->
-            <com.google.android.material.tabs.TabLayout
-                android:id="@+id/tabLayout"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:background="@android:color/transparent"
+            <include
+                android:id="@+id/player_controls"
+                layout="@layout/item_player_controls"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="-16dp"
+                app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/dragHandle"
-                app:tabBackground="@android:color/transparent"
-                app:tabGravity="fill"
-                app:tabIndicatorAnimationMode="elastic"
-                app:tabIndicatorColor="#00E5FF"
-                app:tabIndicatorFullWidth="false"
-                app:tabIndicatorHeight="3dp"
-                app:tabMode="fixed"
-                app:tabRippleColor="@android:color/transparent"
-                app:tabSelectedTextColor="#FFFFFF"
-                app:tabTextAppearance="@style/TextAppearance.Material3.LabelLarge"
-                app:tabTextColor="#8F9CA8">
-
-                <com.google.android.material.tabs.TabItem
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Up Next" />
-
-                <com.google.android.material.tabs.TabItem
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Lyrics" />
-
-                <com.google.android.material.tabs.TabItem
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Info" />
-            </com.google.android.material.tabs.TabLayout>
-
-            <!-- Content Area: Up Next queue, Lyrics, Details -->
-            <androidx.viewpager2.widget.ViewPager2
-                android:id="@+id/viewPager"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:background="@android:color/transparent"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tabLayout" />
-
+                app:layout_constraintTop_toBottomOf="@+id/player_track_cover_placeholder"
+                app:layout_constraintWidth_max="640dp" />
         </androidx.constraintlayout.widget.ConstraintLayout>
 
-    </com.google.android.material.card.MaterialCardView>
+        <include
+            android:id="@+id/player_collapsed_container"
+            layout="@layout/item_player_collapsed_controls" />
+
+    </FrameLayout>
+
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/player_more_container"
+        android:name="dev.brahmkshatriya.echo.ui.player.more.PlayerMoreFragment"
+        style="@style/Widget.Material3.BottomSheet"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:outlineProvider="none"
+        app:backgroundTint="@android:color/transparent"
+        app:behavior_hideable="false"
+        app:behavior_peekHeight="@dimen/player_info_peek_height"
+        app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
+        tools:layout="@layout/fragment_player_more"
+        tools:layout_marginTop="-72dp" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
