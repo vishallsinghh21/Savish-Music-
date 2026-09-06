@@ -102,6 +102,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         applyBackPressCallback()
         getTouchHelper(listener).attachToRecyclerView(binding.recyclerView)
 
+        // Bypassing empty Unified Extension container
         configureGridLayout(
             binding.recyclerView,
             feedAdapter.withLoading(this)
@@ -114,26 +115,26 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             }
         }
 
-        // Profile click triggers Settings
+        // Profile click opens App Settings
         binding.ivProfileAvatar.setOnClickListener {
             startActivity(SettingsActivity.getIntent(requireContext()))
         }
 
-        // Search trigger on enter key
+        // Search trigger on keyboard enter
         binding.etHomeSearch.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_SEARCH) {
                 val query = binding.etHomeSearch.text?.toString()?.trim()
                 if (!query.isNullOrEmpty()) {
-                    uiViewModel.navigation.value = 2 // Switch to Search tab
+                    uiViewModel.navigation.value = 2 // Switch to search
                 }
                 true
             } else false
         }
 
-        buildDynamicCapsules(binding)
+        setupDynamicCapsules(binding)
     }
 
-    private fun buildDynamicCapsules(binding: FragmentHomeBinding) {
+    private fun setupDynamicCapsules(binding: FragmentHomeBinding) {
         val ctx = context ?: return
         val container = binding.layoutCapsulesContainer
 
@@ -171,7 +172,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             binding.viewAmbientGlow.background = radialGradient
         }
 
-        fun renderList(list: List<CapsuleItem>) {
+        fun renderCapsules(list: List<CapsuleItem>) {
             container.removeAllViews()
             val cards = mutableListOf<Pair<MaterialCardView, CapsuleItem>>()
 
@@ -198,7 +199,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                 binding.ivSearchIcon.imageTintList = ColorStateList.valueOf(activeColor)
                 binding.etHomeSearch.hint = "Search songs in Savish ${item.name}..."
 
-                // Change extension source if not All media
                 if (item.id != null) {
                     extensionLoader.loadedExtensions.value.find { it.id == item.id }?.let { ext ->
                         feedData.current.value = ext
@@ -259,7 +259,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             }
         }
 
-        // Live Extension Monitoring: Jab bhi naya extension load ho, auto capsule generate karein
+        // Loaded extensions se automatically capsule list populate hogi
         observe(extensionLoader.loadedExtensions) { exts: List<EchoExtension> ->
             val list = mutableListOf<CapsuleItem>()
             list.add(CapsuleItem(null, "All media", "#00E5FF"))
@@ -267,7 +267,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             exts.forEach { ext ->
                 list.add(CapsuleItem(ext.id, ext.name, resolveColor(ext.name)))
             }
-            renderList(list)
+            renderCapsules(list)
         }
     }
 }
