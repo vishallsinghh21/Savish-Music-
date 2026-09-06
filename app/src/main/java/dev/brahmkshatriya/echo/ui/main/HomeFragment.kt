@@ -1,9 +1,9 @@
 package dev.brahmkshatriya.echo.ui.main
 
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Bundle
 import android.view.View
-import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.transition.MaterialSharedAxis
@@ -77,7 +77,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         applyBackPressCallback()
         getTouchHelper(listener).attachToRecyclerView(binding.recyclerView)
 
-        // Unified Extension Header ko hata kar direct clean feed load karna
         configureGridLayout(
             binding.recyclerView,
             feedAdapter.withLoading(this)
@@ -90,47 +89,40 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             }
         }
 
-        setupCapsuleTriggers(binding)
+        setupCapsules(binding)
     }
 
-    private fun setupCapsuleTriggers(binding: FragmentHomeBinding) {
-        val capsules = listOf(
-            Triple(binding.capsuleAllMedia, "#1500E5FF", "All media"),
-            Triple(binding.capsuleYouTube, "#18FF0033", "YouTube"),
-            Triple(binding.capsuleSpotify, "#181DB954", "Spotify"),
-            Triple(binding.capsuleJioSaavn, "#1800B0FF", "JioSaavn")
+    private fun setupCapsules(binding: FragmentHomeBinding) {
+        val list = listOf(
+            binding.capsuleAllMedia,
+            binding.capsuleYouTube,
+            binding.capsuleSpotify,
+            binding.capsuleJioSaavn
         )
 
-        fun selectCapsule(selectedCard: MaterialCardView, glowColor: String, platformName: String) {
-            capsules.forEach { (card, _, _) ->
-                if (card == selectedCard) {
-                    card.setCardBackgroundColor(Color.parseColor("#1F2933"))
-                    card.strokeWidth = 2
-                } else {
-                    card.setCardBackgroundColor(Color.parseCllolor("#141B22"))
-                    card.strokeWidth = 1
-                }
+        fun updateUI(selected: MaterialCardView, glowHex: String, name: String) {
+            list.forEach { card ->
+                val isSel = card == selected
+                val bgHex = if (isSel) "#1F2933" else "#141B22"
+                card.setCardBackgroundColor(ColorStateList.valueOf(Color.parseColor(bgHex)))
+                card.strokeWidth = if (isSel) 2 else 1
             }
-            binding.viewAmbientGlow.setBackgroundColor(Color.parseColor(glowColor))
-            binding.etHomeSearch.hint = "Search songs in Savish $platformName..."
-            
-            // Switch current active extension/feed
-            feedData.current.value?.let { curr ->
-                feedData.refresh()
-            }
+            binding.viewAmbientGlow.setBackgroundColor(Color.parseColor(glowHex))
+            binding.etHomeSearch.hint = "Search songs in Savish $name..."
+            feedData.refresh()
         }
 
         binding.capsuleAllMedia.setOnClickListener {
-            selectCapsule(binding.capsuleAllMedia, "#1500E5FF", "All media")
+            updateUI(binding.capsuleAllMedia, "#1500E5FF", "All media")
         }
         binding.capsuleYouTube.setOnClickListener {
-            selectCapsule(binding.capsuleYouTube, "#18FF0033", "YouTube")
+            updateUI(binding.capsuleYouTube, "#18FF0033", "YouTube")
         }
         binding.capsuleSpotify.setOnClickListener {
-            selectCapsule(binding.capsuleSpotify, "#181DB954", "Spotify")
+            updateUI(binding.capsuleSpotify, "#181DB954", "Spotify")
         }
         binding.capsuleJioSaavn.setOnClickListener {
-            selectCapsule(binding.capsuleJioSaavn, "#1800B0FF", "JioSaavn")
+            updateUI(binding.capsuleJioSaavn, "#1800B0FF", "JioSaavn")
         }
     }
 }
