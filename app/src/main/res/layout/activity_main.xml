@@ -5,7 +5,7 @@
     android:id="@+id/coordinatorLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0A0D14">
+    android:background="#070A0F">
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/hiddenWebViewContainer"
@@ -28,32 +28,33 @@
         app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
         tools:layout="@layout/fragment_player" />
 
-    <!-- Pure iPhone 3D Liquid Glass Floating Dock -->
+    <!-- Pure iPhone 3D Liquid Glass Floating Dock (Centered & Symmetrical) -->
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
         android:clipChildren="false"
         android:clipToPadding="false"
-        android:paddingHorizontal="20dp"
-        android:paddingBottom="24dp">
+        android:paddingHorizontal="18dp"
+        android:paddingBottom="20dp">
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/navCardContainer"
             android:layout_width="match_parent"
-            android:layout_height="68dp"
+            android:layout_height="76dp"
             app:cardBackgroundColor="@android:color/transparent"
-            app:cardCornerRadius="34dp"
-            app:cardElevation="14dp"
+            app:cardCornerRadius="38dp"
+            app:cardElevation="16dp"
             app:strokeColor="@android:color/transparent"
             app:strokeWidth="0dp">
 
+            <!-- 3D Liquid Glass Backing Layer -->
             <View
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:background="@drawable/bg_liquid_glass_nav" />
 
-            <!-- Symmetrical Centered Menu View -->
+            <!-- Perfectly Vertically & Horizontally Balanced Menu -->
             <com.google.android.material.bottomnavigation.BottomNavigationView
                 android:id="@+id/navView"
                 style="@style/NavView"
@@ -63,9 +64,9 @@
                 android:background="@android:color/transparent"
                 app:elevation="0dp"
                 app:itemActiveIndicatorStyle="@style/Widget.Material3.BottomNavigationView.ActiveIndicator"
-                app:itemIconSize="23dp"
-                app:itemPaddingBottom="6dp"
-                app:itemPaddingTop="8dp"
+                app:itemIconSize="22dp"
+                app:itemPaddingBottom="8dp"
+                app:itemPaddingTop="10dp"
                 app:labelVisibilityMode="labeled"
                 app:menu="@menu/nav_menu" />
 
