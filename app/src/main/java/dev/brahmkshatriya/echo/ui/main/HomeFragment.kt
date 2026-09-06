@@ -17,13 +17,13 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.transition.MaterialSharedAxis
 import dev.brahmkshatriya.echo.R
 import dev.brahmkshatriya.echo.common.clients.HomeFeedClient
 import dev.brahmkshatriya.echo.common.models.EchoMediaItem
-import dev.brahmkshatriya.echo.common.models.Extension
 import dev.brahmkshatriya.echo.common.models.ExtensionType
 import dev.brahmkshatriya.echo.common.models.Feed
 import dev.brahmkshatriya.echo.common.models.Feed.Buttons.Companion.EMPTY
@@ -34,9 +34,7 @@ import dev.brahmkshatriya.echo.extensions.cache.Cached
 import dev.brahmkshatriya.echo.ui.common.GridAdapter.Companion.configureGridLayout
 import dev.brahmkshatriya.echo.ui.common.UiViewModel
 import dev.brahmkshatriya.echo.ui.common.UiViewModel.Companion.applyBackPressCallback
-import dev.brahmkshatriya.echo.ui.common.UiViewModel.Companion.configure
 import dev.brahmkshatriya.echo.ui.extensions.list.ExtensionsListBottomSheet
-import dev.brahmkshatriya.echo.ui.feed.FeedAdapter
 import dev.brahmkshatriya.echo.ui.feed.FeedAdapter.Companion.getFeedAdapter
 import dev.brahmkshatriya.echo.ui.feed.FeedAdapter.Companion.getTouchHelper
 import dev.brahmkshatriya.echo.ui.feed.FeedClickListener.Companion.getFeedListener
@@ -57,58 +55,22 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         vm.getFeedData(id, EMPTY, cached = {
             val curr = current.value ?: return@getFeedData null
             val feed = Cached.getFeedShelf(app, curr.id, id).getOrNull()
-            FeedData.State(curr.id, null, filterContentOnly(feed))
+            FeedData.State(curr.id, null, feed)
         }) {
             val curr = current.value ?: return@getFeedData null
-            val rawFeed = Cached.savingFeed(
+            val feed = Cached.savingFeed(
                 app, curr, id,
                 curr.getAs<HomeFeedClient, Feed<Shelf>> { loadHomeFeed() }.getOrThrow()
             )
-            FeedData.State(curr.id, null, filterContentOnly(rawFeed))
+            FeedData.State(curr.id, null, feed)
         }
     }
 
     private val listener by lazy { getFeedListener(requireParentFragment()) }
-    private val rawFeedAdapter by lazy { getFeedAdapter(feedData, listener) }
+    private val feedAdapter by lazy { getFeedAdapter(feedData, listener) }
 
-    // Intercept and strip out category chips, duplicate buttons & shelf headers
-    private val feedAdapter by lazy {
-        object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-            override fun getItemCount() = rawFeedAdapter.itemCount
-            override fun getItemViewType(position: Int) = rawFeedAdapter.getItemViewType(position)
-
-            override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-                val holder = rawFeedAdapter.onCreateViewHolder(parent, viewType)
-                // If item matches header/category/button shelf, collapse its bounds entirely
-                if (viewType == R.layout.item_shelf_category ||
-                    viewType == R.layout.item_shelf_header ||
-                    viewType == R.layout.item_shelf_empty
-                ) {
-                    holder.itemView.layoutParams = RecyclerView.LayoutParams(0, 0).apply {
-                        visibility = View.GONE
-                    }
-                }
-                return holder
-            }
-
-            override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-                if (holder.itemView.layoutParams.height == 0) {
-                    holder.itemView.visibility = View.GONE
-                    return
-                }
-                rawFeedAdapter.onBindViewHolder(holder, position)
-            }
-        }
-    }
-
-    private data class DynamicPlatform(
-        val id: String?,
-        val name: String,
-        val colorHex: String,
-        val extension: Extension? = null
-    )
-
-    private var activePlatform = DynamicPlatform(null, "All media", "#00E5FF")
+    private data class PlatformChip(val id: String?, val name: String, val colorHex: String)
+    private var selectedPlatform = PlatformChip(null, "All media", "#00E5FF")
 
     private fun dp(ctx: Context, v: Float): Int {
         return TypedValue.applyDimension(
@@ -116,18 +78,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             v,
             ctx.resources.displayMetrics
         ).toInt()
-    }
-
-    private fun filterContentOnly(feed: Feed<Shelf>?): Feed<Shelf>? {
-        if (feed == null) return null
-        val cleanShelves = feed.items.filter { shelf ->
-            val title = shelf.title.lowercase()
-            !title.contains("category") &&
-            !title.contains("filter") &&
-            !title.contains("source") &&
-            shelf.items.isNotEmpty()
-        }
-        return feed.copy(items = cleanShelves)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -142,37 +92,31 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             ExtensionsListBottomSheet.newInstance(ExtensionType.MUSIC)
                 .show(parentFragmentManager, null)
         }
-
         observe(
             uiViewModel.navigation.combine(feedData.backgroundImageFlow) { a, b -> a to b }
         ) { (curr, bg) ->
             if (curr != 0) return@observe
             uiViewModel.currentNavBackground.value = bg
         }
-
         applyBackPressCallback()
         getTouchHelper(listener).attachToRecyclerView(binding.recyclerView)
 
         configureGridLayout(
             binding.recyclerView,
-            feedAdapter
+            feedAdapter.withLoading(this)
         )
 
-        // Profile avatar opens extension/settings manager
         binding.ivProfile.setOnClickListener {
             ExtensionsListBottomSheet.newInstance(ExtensionType.MUSIC)
                 .show(parentFragmentManager, null)
         }
 
-        // Platform-aware search trigger
         binding.etHomeSearch.setOnEditorActionListener { v, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_SEARCH) {
                 val query = binding.etHomeSearch.text?.toString()?.trim()
                 if (!query.isNullOrEmpty()) {
                     val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
                     imm?.hideSoftInputFromWindow(v.windowToken, 0)
-
-                    // Forward query with platform filter context to search page
                     uiViewModel.searchQuery.value = query
                     uiViewModel.navigation.value = 2
                 }
@@ -180,10 +124,10 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             } else false
         }
 
-        setupLivePlatformCapsules(binding, uiViewModel)
+        setupPlatformSystem(binding)
     }
 
-    private fun setupLivePlatformCapsules(binding: FragmentHomeBinding, uiViewModel: UiViewModel) {
+    private fun setupPlatformSystem(binding: FragmentHomeBinding) {
         val ctx = context ?: return
 
         fun resolveColor(name: String): String {
@@ -219,107 +163,110 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             binding.homeRoot.background = radialGradient
         }
 
-        // Observe actual installed extensions dynamically
-        observe(uiViewModel.extensions) { installedExtensions ->
-            val list = mutableListOf(
-                DynamicPlatform(null, "All media", "#00E5FF")
-            )
+        val platformList = mutableListOf(
+            PlatformChip(null, "All media", "#00E5FF"),
+            PlatformChip("offline", "Offline", "#FF9900"),
+            PlatformChip("youtube", "YouTube", "#FF0033"),
+            PlatformChip("spotify", "Spotify", "#1DB954"),
+            PlatformChip("jiosaavn", "JioSaavn", "#00D2C4"),
+            PlatformChip("deezer", "Deezer", "#A238FF")
+        )
 
-            installedExtensions.forEach { ext ->
-                list.add(DynamicPlatform(ext.id, ext.name, resolveColor(ext.name), ext))
+        // Read active extension if available
+        feedData.current.value?.let { curr ->
+            if (platformList.none { it.name.equals(curr.name, ignoreCase = true) }) {
+                platformList.add(PlatformChip(curr.id, curr.name, resolveColor(curr.name)))
             }
-
-            // Bind capsules inside RecyclerView container
-            binding.rvPlatformCapsules.adapter = object : RecyclerView.Adapter<CapsuleViewHolder>() {
-                override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CapsuleViewHolder {
-                    val card = MaterialCardView(ctx).apply {
-                        radius = dp(ctx, 22f).toFloat()
-                        strokeWidth = dp(ctx, 1.2f)
-                        strokeColor = Color.parseColor("#25313D")
-                        setCardBackgroundColor(ColorStateList.valueOf(Color.parseColor("#141B22")))
-                        layoutParams = ViewGroup.MarginLayoutParams(
-                            ViewGroup.LayoutParams.WRAP_CONTENT,
-                            dp(ctx, 42f)
-                        ).apply {
-                            setMargins(0, 0, dp(ctx, 8f), 0)
-                        }
-                    }
-
-                    val row = LinearLayout(ctx).apply {
-                        orientation = LinearLayout.HORIZONTAL
-                        gravity = Gravity.CENTER
-                        setPadding(dp(ctx, 16f), 0, dp(ctx, 16f), 0)
-                    }
-
-                    val dot = View(ctx).apply {
-                        layoutParams = ViewGroup.MarginLayoutParams(dp(ctx, 8f), dp(ctx, 8f)).apply {
-                            setMargins(0, 0, dp(ctx, 8f), 0)
-                        }
-                        background = ContextCompat.getDrawable(ctx, android.R.drawable.presence_online)
-                    }
-
-                    val tv = TextView(ctx).apply {
-                        textSize = 14f
-                        setTextColor(Color.WHITE)
-                        typeface = Typeface.DEFAULT_BOLD
-                    }
-
-                    row.addView(dot)
-                    row.addView(tv)
-                    card.addView(row)
-                    return CapsuleViewHolder(card, dot, tv)
-                }
-
-                override fun onBindViewHolder(holder: CapsuleViewHolder, position: Int) {
-                    val item = list[position]
-                    holder.title.text = item.name
-                    val platformColor = Color.parseColor(item.colorHex)
-                    holder.dot.backgroundTintList = ColorStateList.valueOf(platformColor)
-
-                    val isSelected = (activePlatform.id == item.id)
-                    if (isSelected) {
-                        holder.card.strokeColor = platformColor
-                        holder.card.strokeWidth = dp(ctx, 2.5f)
-                        holder.card.setCardBackgroundColor(
-                            ColorStateList.valueOf(ColorUtils.setAlphaComponent(platformColor, 40))
-                        )
-                    } else {
-                        holder.card.strokeColor = Color.parseColor("#25313D")
-                        holder.card.strokeWidth = dp(ctx, 1.2f)
-                        holder.card.setCardBackgroundColor(
-                            ColorStateList.valueOf(Color.parseColor("#141B22"))
-                        )
-                    }
-
-                    holder.card.setOnClickListener {
-                        activePlatform = item
-                        notifyDataSetChanged()
-
-                        // 1. Dynamic Search placeholder & Aura color
-                        binding.etHomeSearch.hint = "Search songs in Savish ${item.name}..."
-                        updateAura(platformColor)
-
-                        // 2. Switch feed context
-                        if (item.extension != null) {
-                            feedData.current.value = item.extension
-                        } else {
-                            // All Media mode: refresh all
-                            feedData.refresh()
-                        }
-                    }
-                }
-
-                override fun getItemCount() = list.size
-            }
-
-            // Set initial state
-            updateAura(Color.parseColor(activePlatform.colorHex))
         }
-    }
 
-    private class CapsuleViewHolder(
-        val card: MaterialCardView,
-        val dot: View,
-        val title: TextView
-    ) : RecyclerView.ViewHolder(card)
+        binding.rvPlatformCapsules.layoutManager =
+            LinearLayoutManager(ctx, LinearLayoutManager.HORIZONTAL, false)
+
+        class CapsuleAdapter : RecyclerView.Adapter<CapsuleAdapter.ViewHolder>() {
+            inner class ViewHolder(
+                val card: MaterialCardView,
+                val dot: View,
+                val text: TextView
+            ) : RecyclerView.ViewHolder(card)
+
+            override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+                val card = MaterialCardView(ctx).apply {
+                    radius = dp(ctx, 20f).toFloat()
+                    strokeWidth = dp(ctx, 1.2f)
+                    strokeColor = Color.parseColor("#25313D")
+                    setCardBackgroundColor(ColorStateList.valueOf(Color.parseColor("#141B22")))
+                    layoutParams = ViewGroup.MarginLayoutParams(
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        dp(ctx, 40f)
+                    ).apply {
+                        setMargins(0, 0, dp(ctx, 8f), 0)
+                    }
+                }
+
+                val row = LinearLayout(ctx).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER
+                    setPadding(dp(ctx, 16f), 0, dp(ctx, 16f), 0)
+                }
+
+                val dot = View(ctx).apply {
+                    layoutParams = ViewGroup.MarginLayoutParams(dp(ctx, 8f), dp(ctx, 8f)).apply {
+                        setMargins(0, 0, dp(ctx, 8f), 0)
+                    }
+                    background = ContextCompat.getDrawable(ctx, android.R.drawable.presence_online)
+                }
+
+                val text = TextView(ctx).apply {
+                    textSize = 14f
+                    setTextColor(Color.WHITE)
+                    typeface = Typeface.DEFAULT_BOLD
+                }
+
+                row.addView(dot)
+                row.addView(text)
+                card.addView(row)
+                return ViewHolder(card, dot, text)
+            }
+
+            override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+                val item = platformList[position]
+                holder.text.text = item.name
+                val color = Color.parseColor(item.colorHex)
+                holder.dot.backgroundTintList = ColorStateList.valueOf(color)
+
+                val isSelected = (selectedPlatform.name == item.name)
+                if (isSelected) {
+                    holder.card.strokeColor = color
+                    holder.card.strokeWidth = dp(ctx, 2.5f)
+                    holder.card.setCardBackgroundColor(
+                        ColorStateList.valueOf(ColorUtils.setAlphaComponent(color, 45))
+                    )
+                } else {
+                    holder.card.strokeColor = Color.parseColor("#25313D")
+                    holder.card.strokeWidth = dp(ctx, 1.2f)
+                    holder.card.setCardBackgroundColor(
+                        ColorStateList.valueOf(Color.parseColor("#141B22"))
+                    )
+                }
+
+                holder.card.setOnClickListener {
+                    selectedPlatform = item
+                    notifyDataSetChanged()
+
+                    val activeColor = Color.parseColor(item.colorHex)
+                    updateAura(activeColor)
+                    binding.searchBarContainer.backgroundTintList =
+                        ColorStateList.valueOf(ColorUtils.setAlphaComponent(activeColor, 35))
+                    binding.etHomeSearch.hint = "Search songs in Savish ${item.name}..."
+
+                    feedData.refresh()
+                }
+            }
+
+            override fun getItemCount() = platformList.size
+        }
+
+        binding.rvPlatformCapsules.adapter = CapsuleAdapter()
+        updateAura(Color.parseColor(selectedPlatform.colorHex))
+    }
 }
