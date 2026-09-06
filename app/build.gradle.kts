@@ -9,8 +9,20 @@ plugins {
 }
 
 val hasGoogleServices = file("google-services.json").exists()
-val gitHash = execute("git", "rev-parse", "HEAD").take(7)
-val gitCount = execute("git", "rev-list", "--count", "HEAD").toInt()
+
+// Git execution safe check: Shallow clone ya CI par crash hone se bachaane ke liye
+val gitHash = try {
+    execute("git", "rev-parse", "HEAD").take(7).ifBlank { "dev" }
+} catch (_: Exception) {
+    "dev"
+}
+
+val gitCount = try {
+    execute("git", "rev-list", "--count", "HEAD").toIntOrNull() ?: 1
+} catch (_: Exception) {
+    1
+}
+
 val version = "3.0.$gitCount"
 
 android {
@@ -31,15 +43,17 @@ android {
             isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
             )
         }
         create("nightly") {
             initWith(getByName("release"))
             applicationIdSuffix = ".nightly"
-            resValue("string", "app_name", "Echo Nightly")
+            resValue("string", "app_name", "Savish Music Nightly")
         }
         create("stable") {
             initWith(getByName("release"))
+            resValue("string", "app_name", "Savish Music")
         }
     }
 
@@ -92,6 +106,8 @@ if (hasGoogleServices) {
     apply(plugin = libs.plugins.crashlytics.get().pluginId)
 }
 
-fun execute(vararg command: String): String = providers.exec {
-    commandLine(*command)
-}.standardOutput.asText.get().trim()
+fun execute(vararg command: String): String = runCatching {
+    providers.exec {
+        commandLine(*command)
+    }.standardOutput.asText.get().trim()
+}.getOrDefault("")
