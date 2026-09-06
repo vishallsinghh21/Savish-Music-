@@ -13,6 +13,7 @@ import androidx.fragment.app.commit
 import com.google.android.material.color.DynamicColors
 import com.google.android.material.color.DynamicColorsOptions
 import com.google.android.material.navigation.NavigationBarView
+import dev.brahmkshatriya.echo.common.models.ExtensionType
 import dev.brahmkshatriya.echo.databinding.ActivityMainBinding
 import dev.brahmkshatriya.echo.extensions.ExtensionLoader
 import dev.brahmkshatriya.echo.ui.common.ExceptionUtils.setupExceptionHandler
@@ -22,6 +23,7 @@ import dev.brahmkshatriya.echo.ui.common.UiViewModel
 import dev.brahmkshatriya.echo.ui.common.UiViewModel.Companion.setupNavBarAndInsets
 import dev.brahmkshatriya.echo.ui.common.UiViewModel.Companion.setupPlayerBehavior
 import dev.brahmkshatriya.echo.ui.extensions.ExtensionsViewModel.Companion.configureExtensionsUpdater
+import dev.brahmkshatriya.echo.ui.extensions.list.ExtensionsListBottomSheet
 import dev.brahmkshatriya.echo.ui.main.MainFragment
 import dev.brahmkshatriya.echo.ui.player.PlayerFragment
 import dev.brahmkshatriya.echo.ui.player.PlayerFragment.Companion.PLAYER_COLOR
@@ -55,6 +57,23 @@ open class MainActivity : AppCompatActivity() {
         )
 
         setupNavBarAndInsets(uiViewModel, binding.root, binding.navView as NavigationBarView)
+
+        // Handle Floating Bottom Bar Extensions Button Trigger
+        binding.navView.setOnItemSelectedListener { item ->
+            if (item.itemId == R.id.nav_extensions) {
+                ExtensionsListBottomSheet.newInstance(ExtensionType.MUSIC)
+                    .show(supportFragmentManager, "extensions_bottom_sheet")
+                false // Active page selection change na ho, sheet pop-up ho
+            } else {
+                when (item.itemId) {
+                    R.id.homeFragment -> uiViewModel.navigation.value = 0
+                    R.id.searchFragment -> uiViewModel.navigation.value = 1
+                    R.id.libraryFragment -> uiViewModel.navigation.value = 2
+                }
+                true
+            }
+        }
+
         setupPlayerBehavior(uiViewModel, binding.playerFragmentContainer)
         setupExceptionHandler(setupSnackBar(uiViewModel, binding.root))
         checkAppPermissions { extensionLoader.setPermGranted() }
