@@ -2,31 +2,33 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/homeRootLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0D1117"
+    android:background="#0A0D14"
     tools:context="dev.brahmkshatriya.echo.ui.main.HomeFragment">
 
-    <!-- Dynamic Platform Ambient Glow / Gradient Background -->
+    <!-- Dynamic Diamond Ambient Mesh Background Layer -->
     <View
         android:id="@+id/viewAmbientGlow"
         android:layout_width="match_parent"
-        android:layout_height="320dp"
-        android:background="#1500E5FF" />
+        android:layout_height="match_parent"
+        android:alpha="0.14"
+        android:background="#00E5FF" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <!-- Top Header & App Bar -->
+        <!-- Top Header: Bold, Prominent & iOS-style -->
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/headerContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingHorizontal="20dp"
-            android:paddingTop="36dp"
-            android:paddingBottom="10dp">
+            android:paddingHorizontal="22dp"
+            android:paddingTop="42dp"
+            android:paddingBottom="14dp">
 
             <LinearLayout
                 android:id="@+id/syncStatusContainer"
@@ -39,19 +41,19 @@
 
                 <View
                     android:id="@+id/dotSyncStatus"
-                    android:layout_width="7dp"
-                    android:layout_height="7dp"
+                    android:layout_width="9dp"
+                    android:layout_height="9dp"
                     android:background="@android:drawable/presence_online" />
 
                 <TextView
                     android:id="@+id/tvSyncStatus"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
-                    android:letterSpacing="0.08"
+                    android:layout_marginStart="8dp"
+                    android:letterSpacing="0.1"
                     android:text="GLOBAL SYNC ACTIVE"
                     android:textColor="#00FF66"
-                    android:textSize="11sp"
+                    android:textSize="12sp"
                     android:textStyle="bold" />
             </LinearLayout>
 
@@ -59,34 +61,34 @@
                 android:id="@+id/tvAppTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
+                android:layout_marginTop="6dp"
                 android:fontFamily="sans-serif-black"
                 android:text="Savish Music"
                 android:textColor="#FFFFFF"
-                android:textSize="26sp"
+                android:textSize="34sp"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/syncStatusContainer" />
 
-            <!-- Profile Avatar (Click: Settings, Hold: Change Photo) -->
+            <!-- Profile Avatar with Neon Ring -->
             <com.google.android.material.imageview.ShapeableImageView
                 android:id="@+id/ivProfileAvatar"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
-                android:background="#1C242D"
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:background="#1B232E"
                 android:clickable="true"
                 android:focusable="true"
                 android:foreground="?attr/selectableItemBackgroundBorderless"
-                android:padding="2dp"
+                android:padding="2.5dp"
                 android:scaleType="centerCrop"
                 app:layout_constraintBottom_toBottomOf="@id/tvAppTitle"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="@id/syncStatusContainer"
                 app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full"
                 app:strokeColor="#38E54D"
-                app:strokeWidth="1.5dp" />
+                app:strokeWidth="2.5dp" />
         </androidx.constraintlayout.widget.ConstraintLayout>
 
-        <!-- Horizontal Scrollable Platform Capsules -->
+        <!-- Horizontal Scrollable Dynamic Extension Capsules -->
         <HorizontalScrollView
             android:id="@+id/scrollCapsules"
             android:layout_width="match_parent"
@@ -94,188 +96,42 @@
             android:clipToPadding="false"
             android:overScrollMode="never"
             android:paddingHorizontal="16dp"
-            android:paddingVertical="6dp"
+            android:paddingVertical="8dp"
             android:scrollbars="none">
 
+            <!-- Dynamic Capsule Injector Container -->
             <LinearLayout
                 android:id="@+id/layoutCapsulesContainer"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <!-- All Media Capsule -->
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/capsuleAllMedia"
-                    android:layout_width="wrap_content"
-                    android:layout_height="36dp"
-                    android:layout_marginEnd="8dp"
-                    android:clickable="true"
-                    android:focusable="true"
-                    app:cardBackgroundColor="#1A2229"
-                    app:cardCornerRadius="18dp"
-                    app:cardElevation="0dp"
-                    app:strokeColor="#00E5FF"
-                    app:strokeWidth="1dp">
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="14dp">
-
-                        <View
-                            android:layout_width="6dp"
-                            android:layout_height="6dp"
-                            android:background="@android:drawable/presence_online" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="6dp"
-                            android:text="All media"
-                            android:textColor="#FFFFFF"
-                            android:textSize="13sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <!-- YouTube Capsule -->
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/capsuleYouTube"
-                    android:layout_width="wrap_content"
-                    android:layout_height="36dp"
-                    android:layout_marginEnd="8dp"
-                    android:clickable="true"
-                    android:focusable="true"
-                    app:cardBackgroundColor="#141B22"
-                    app:cardCornerRadius="18dp"
-                    app:cardElevation="0dp"
-                    app:strokeColor="#2B353E"
-                    app:strokeWidth="1dp">
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="14dp">
-
-                        <View
-                            android:layout_width="6dp"
-                            android:layout_height="6dp"
-                            android:background="@android:drawable/presence_busy" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="6dp"
-                            android:text="YouTube"
-                            android:textColor="#D1D5DB"
-                            android:textSize="13sp" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <!-- Spotify Capsule -->
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/capsuleSpotify"
-                    android:layout_width="wrap_content"
-                    android:layout_height="36dp"
-                    android:layout_marginEnd="8dp"
-                    android:clickable="true"
-                    android:focusable="true"
-                    app:cardBackgroundColor="#141B22"
-                    app:cardCornerRadius="18dp"
-                    app:cardElevation="0dp"
-                    app:strokeColor="#2B353E"
-                    app:strokeWidth="1dp">
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="14dp">
-
-                        <View
-                            android:layout_width="6dp"
-                            android:layout_height="6dp"
-                            android:background="@android:drawable/presence_online" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="6dp"
-                            android:text="Spotify"
-                            android:textColor="#D1D5DB"
-                            android:textSize="13sp" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <!-- JioSaavn Capsule -->
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/capsuleJioSaavn"
-                    android:layout_width="wrap_content"
-                    android:layout_height="36dp"
-                    android:layout_marginEnd="8dp"
-                    android:clickable="true"
-                    android:focusable="true"
-                    app:cardBackgroundColor="#141B22"
-                    app:cardCornerRadius="18dp"
-                    app:cardElevation="0dp"
-                    app:strokeColor="#2B353E"
-                    app:strokeWidth="1dp">
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="14dp">
-
-                        <View
-                            android:layout_width="6dp"
-                            android:layout_height="6dp"
-                            android:background="@android:drawable/presence_away" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="6dp"
-                            android:text="JioSaavn"
-                            android:textColor="#D1D5DB"
-                            android:textSize="13sp" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-            </LinearLayout>
+                android:orientation="horizontal" />
         </HorizontalScrollView>
 
-        <!-- In-line Search Bar (Instant Search Container) -->
+        <!-- Large Floating iPhone Style Search Bar -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/searchBarContainer"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="8dp"
-            app:cardBackgroundColor="#161E24"
-            app:cardCornerRadius="24dp"
+            android:layout_height="56dp"
+            android:layout_marginHorizontal="18dp"
+            android:layout_marginTop="12dp"
+            app:cardBackgroundColor="#18202A"
+            app:cardCornerRadius="28dp"
             app:cardElevation="0dp"
-            app:strokeColor="#25303A"
-            app:strokeWidth="1dp">
+            app:strokeColor="#2C3A48"
+            app:strokeWidth="1.8dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:paddingHorizontal="14dp">
+                android:paddingHorizontal="18dp">
 
                 <ImageView
                     android:id="@+id/ivSearchIcon"
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
                     android:src="@android:drawable/ic_menu_search"
                     app:tint="#00E5FF" />
 
@@ -283,33 +139,33 @@
                     android:id="@+id/etHomeSearch"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:layout_marginStart="10dp"
+                    android:layout_marginStart="14dp"
                     android:background="@null"
                     android:hint="Search songs in Savish All media..."
                     android:imeOptions="actionSearch"
                     android:inputType="text"
                     android:maxLines="1"
                     android:textColor="#FFFFFF"
-                    android:textColorHint="#6C7A89"
-                    android:textSize="14sp" />
+                    android:textColorHint="#798B9C"
+                    android:textSize="16sp" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Personalized Greeting Banner -->
+        <!-- User Greeting Tagline -->
         <LinearLayout
             android:id="@+id/layoutUserGreeting"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="14dp"
             android:orientation="vertical"
-            android:paddingHorizontal="20dp">
+            android:paddingHorizontal="22dp">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Welcome back,"
-                android:textColor="#8899A6"
-                android:textSize="12sp" />
+                android:textColor="#8F9CA8"
+                android:textSize="13sp" />
 
             <TextView
                 android:id="@+id/tvUserName"
@@ -318,16 +174,16 @@
                 android:fontFamily="sans-serif-medium"
                 android:text="Vishal Singh"
                 android:textColor="#FFFFFF"
-                android:textSize="18sp"
+                android:textSize="22sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- Dynamic Content & Feed Shelves (Echo Engine) -->
+        <!-- Clean Music Feed (Albums, Playlists, Posters) -->
         <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
             android:id="@+id/swipeRefresh"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginTop="4dp">
+            android:layout_marginTop="6dp">
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recycler_view"
@@ -337,7 +193,7 @@
                 android:contentDescription="@string/home"
                 android:orientation="vertical"
                 android:paddingHorizontal="16dp"
-                android:paddingBottom="90dp"
+                android:paddingBottom="110dp"
                 app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
                 tools:listitem="@layout/item_shelf_lists" />
 
