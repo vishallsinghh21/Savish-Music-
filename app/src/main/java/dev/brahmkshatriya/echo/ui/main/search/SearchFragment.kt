@@ -1,17 +1,21 @@
 package dev.brahmkshatriya.echo.ui.main.search
 
+import android.content.Context
+import android.content.res.ColorStateList
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.View
-import androidx.activity.OnBackPressedCallback
-import androidx.core.widget.doOnTextChanged
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
+import androidx.core.graphics.ColorUtils
 import androidx.fragment.app.Fragment
-import com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
 import com.google.android.material.transition.MaterialSharedAxis
 import dev.brahmkshatriya.echo.R
 import dev.brahmkshatriya.echo.common.clients.SearchFeedClient
+import dev.brahmkshatriya.echo.common.models.ExtensionType
 import dev.brahmkshatriya.echo.common.models.Feed
 import dev.brahmkshatriya.echo.common.models.Feed.Buttons.Companion.EMPTY
-import dev.brahmkshatriya.echo.common.models.QuickSearchItem
 import dev.brahmkshatriya.echo.common.models.Shelf
 import dev.brahmkshatriya.echo.databinding.FragmentSearchBinding
 import dev.brahmkshatriya.echo.extensions.ExtensionUtils.getAs
@@ -21,12 +25,12 @@ import dev.brahmkshatriya.echo.ui.common.GridAdapter.Companion.configureGridLayo
 import dev.brahmkshatriya.echo.ui.common.UiViewModel
 import dev.brahmkshatriya.echo.ui.common.UiViewModel.Companion.applyBackPressCallback
 import dev.brahmkshatriya.echo.ui.common.UiViewModel.Companion.configure
+import dev.brahmkshatriya.echo.ui.extensions.list.ExtensionsListBottomSheet
 import dev.brahmkshatriya.echo.ui.feed.FeedAdapter.Companion.getFeedAdapter
 import dev.brahmkshatriya.echo.ui.feed.FeedAdapter.Companion.getTouchHelper
 import dev.brahmkshatriya.echo.ui.feed.FeedClickListener.Companion.getFeedListener
 import dev.brahmkshatriya.echo.ui.feed.FeedData
 import dev.brahmkshatriya.echo.ui.feed.FeedViewModel
-import dev.brahmkshatriya.echo.ui.main.HeaderAdapter
 import dev.brahmkshatriya.echo.ui.main.MainFragment.Companion.applyInsets
 import dev.brahmkshatriya.echo.ui.main.search.SearchViewModel.Companion.saveInHistory
 import dev.brahmkshatriya.echo.utils.ContextUtils.observe
@@ -39,7 +43,6 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
 
     private val argId by lazy { arguments?.getString("extensionId") }
     private val searchViewModel by viewModel<SearchViewModel>()
-
     private var extensionId = ""
 
     private val feedData by lazy {
@@ -51,13 +54,13 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
             false,
             searchViewModel.queryFlow,
             cached = {
-                val curr = music.getExtension(argId) ?: current.value!!
+                val curr = music.getExtension(argId) ?: current.value ?: return@getFeedData null
                 val query = searchViewModel.queryFlow.value
-                val feed = Cached.getFeedShelf(app, curr.id, "$id-$query")
-                FeedData.State(curr.id, null, feed.getOrThrow())
+                val feed = Cached.getFeedShelf(app, curr.id, "$id-$query").getOrNull()
+                feed?.let { FeedData.State(curr.id, null, it) }
             }
         ) {
-            val curr = music.getExtension(argId) ?: current.value!!
+            val curr = music.getExtension(argId) ?: current.value ?: return@getFeedData null
             val query = searchViewModel.queryFlow.value
             curr.saveInHistory(vm.app.context, query)
             val feed = Cached.savingFeed(
@@ -84,111 +87,87 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
             binding.swipeRefresh.configure(it)
         }
         val uiViewModel by activityViewModel<UiViewModel>()
+
         observe(uiViewModel.navigationReselected) {
-            if (it != 1) return@observe
-            binding.quickSearchView.show()
+            if (it != 2) return@observe
+            binding.etSearchInput.requestFocus()
         }
-        observe(uiViewModel.navigation) {
-            binding.quickSearchView.hide()
-        }
+
         observe(
             uiViewModel.navigation.combine(feedData.backgroundImageFlow) { a, b -> a to b }
         ) { (curr, bg) ->
-            if (curr != 1) return@observe
+            if (curr != 2) return@observe
             uiViewModel.currentNavBackground.value = bg
         }
-        val backCallback = object : OnBackPressedCallback(false) {
-            override fun handleOnBackPressed() {
-                binding.quickSearchView.hide()
-            }
-        }
-        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, backCallback)
-        binding.quickSearchView.addTransitionListener { v, _, _ ->
-            backCallback.isEnabled = v.isShowing
-        }
-        applyBackPressCallback {
-            if (it == STATE_EXPANDED) binding.quickSearchView.hide()
-        }
-        val searchAdapter = SearchBarAdapter(searchViewModel, binding.quickSearchView)
-        observe(searchViewModel.queryFlow) {
-            searchAdapter.notifyItemChanged(0)
-            binding.quickSearchView.setText(it)
-        }
+
+        applyBackPressCallback()
         getTouchHelper(listener).attachToRecyclerView(binding.recyclerView)
+
         configureGridLayout(
             binding.recyclerView,
-            feedAdapter.withLoading(this, HeaderAdapter(this), searchAdapter)
+            feedAdapter.withLoading(this)
         )
+
         binding.swipeRefresh.run {
             setOnRefreshListener { feedData.refresh() }
             observe(feedData.isRefreshingFlow) {
                 isRefreshing = it
             }
         }
-        binding.quickSearchView.editText.setText(searchViewModel.queryFlow.value)
-        binding.quickSearchView.editText.doOnTextChanged { text, _, _, _ ->
-            searchViewModel.quickSearch(extensionId, text.toString())
+
+        // Settings Gear Icon Click -> Open Extensions / Settings Sheet
+        binding.btnSearchSettings.setOnClickListener {
+            ExtensionsListBottomSheet.newInstance(ExtensionType.MUSIC)
+                .show(parentFragmentManager, null)
         }
-        binding.quickSearchView.editText.setOnEditorActionListener { textView, _, _ ->
-            val query = textView.text.toString()
-            binding.quickSearchView.hide()
-            searchViewModel.queryFlow.value = query
-            false
+
+        // Aura Background & Search Border Setup based on Active Platform
+        setupSearchAuraAndTheme(binding)
+
+        // Perform Search on Enter Key Action
+        binding.etSearchInput.setOnEditorActionListener { v, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                val query = binding.etSearchInput.text?.toString()?.trim().orEmpty()
+                val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+                imm?.hideSoftInputFromWindow(v.windowToken, 0)
+                searchViewModel.queryFlow.value = query
+                true
+            } else false
         }
-        val quickSearchAdapter = QuickSearchAdapter(object : QuickSearchAdapter.Listener {
-            override fun onClick(item: QuickSearchAdapter.Item, transitionView: View) {
-                when (val actualItem = item.actual) {
-                    is QuickSearchItem.Query -> {
-                        binding.quickSearchView.editText.run {
-                            setText(actualItem.query)
-                            onEditorAction(imeOptions)
-                        }
-                    }
+    }
 
-                    is QuickSearchItem.Media -> {
-                        val extensionId = item.extensionId
-                        listener.onMediaClicked(transitionView, extensionId, actualItem.media, null)
-                    }
-                }
-            }
+    private fun setupSearchAuraAndTheme(binding: FragmentSearchBinding) {
+        val activeName = feedData.current.value?.name ?: "All media"
+        val activeColor = when {
+            "spotify" in activeName.lowercase() -> Color.parseColor("#1DB954")
+            "youtube" in activeName.lowercase() -> Color.parseColor("#FF0033")
+            "saavn" in activeName.lowercase() -> Color.parseColor("#00D2C4")
+            "deezer" in activeName.lowercase() -> Color.parseColor("#A238FF")
+            "offline" in activeName.lowercase() -> Color.parseColor("#FF9900")
+            else -> Color.parseColor("#00E5FF")
+        }
 
-            override fun onDeleteClick(item: QuickSearchAdapter.Item) =
-                searchViewModel.deleteSearch(
-                    item.extensionId,
-                    item.actual,
-                    binding.quickSearchView.editText.text.toString()
-                )
+        val dm = resources.displayMetrics
+        val radius = dm.widthPixels * 0.95f
+        val radialGradient = GradientDrawable().apply {
+            gradientType = GradientDrawable.RADIAL_GRADIENT
+            gradientRadius = radius
+            setGradientCenter(0.5f, 0.20f)
+            colors = intArrayOf(
+                ColorUtils.setAlphaComponent(activeColor, 110),
+                ColorUtils.setAlphaComponent(activeColor, 35),
+                Color.parseColor("#070A0F")
+            )
+        }
+        binding.viewSearchAmbientGlow.background = radialGradient
 
-            override fun onLongClick(item: QuickSearchAdapter.Item, transitionView: View) =
-                when (val actualItem = item.actual) {
-                    is QuickSearchItem.Query -> {
-                        onDeleteClick(item)
-                        true
-                    }
+        binding.searchBarContainer.strokeColor = activeColor
+        binding.ivSearchInputIcon.imageTintList = ColorStateList.valueOf(activeColor)
 
-                    is QuickSearchItem.Media -> {
-                        val extensionId = item.extensionId
-                        listener.onMediaLongClicked(
-                            transitionView, extensionId, actualItem.media,
-                            null, null, -1
-                        )
-                        true
-                    }
-                }
-
-            override fun onInsert(item: QuickSearchAdapter.Item) {
-                binding.quickSearchView.editText.run {
-                    setText(item.actual.title)
-                    setSelection(length())
-                }
-            }
-        })
-
-        binding.quickSearchRecyclerView.adapter = quickSearchAdapter
-        observe(searchViewModel.quickFeed) { list ->
-            quickSearchAdapter.submitList(list.map {
-                QuickSearchAdapter.Item(extensionId, it)
-            })
+        if (argId != null) {
+            binding.etSearchInput.hint = "Search songs in Savish $activeName..."
+        } else {
+            binding.etSearchInput.hint = "Search all tracks, albums, artists..."
         }
     }
 }
