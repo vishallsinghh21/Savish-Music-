@@ -5,7 +5,7 @@
     android:id="@+id/coordinatorLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0D1117">
+    android:background="#0A0D14">
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/hiddenWebViewContainer"
@@ -28,29 +28,48 @@
         app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
         tools:layout="@layout/fragment_player" />
 
-    <!-- Ultra Liquid Glass Floating Navigation Bar -->
-    <com.google.android.material.card.MaterialCardView
+    <!-- Pure iPhone 3D Liquid Glass Floating Dock -->
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="64dp"
+        android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:layout_marginHorizontal="20dp"
-        android:layout_marginBottom="18dp"
-        app:cardBackgroundColor="#22111827"
-        app:cardCornerRadius="32dp"
-        app:cardElevation="10dp"
-        app:strokeColor="#33FFFFFF"
-        app:strokeWidth="1.2dp">
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:paddingHorizontal="20dp"
+        android:paddingBottom="24dp">
 
-        <com.google.android.material.bottomnavigation.BottomNavigationView
-            android:id="@+id/navView"
-            style="@style/NavView"
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/navCardContainer"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@android:color/transparent"
-            app:elevation="0dp"
-            app:itemIconSize="22dp"
-            app:labelVisibilityMode="labeled"
-            app:menu="@menu/nav_menu" />
-    </com.google.android.material.card.MaterialCardView>
+            android:layout_height="68dp"
+            app:cardBackgroundColor="@android:color/transparent"
+            app:cardCornerRadius="34dp"
+            app:cardElevation="14dp"
+            app:strokeColor="@android:color/transparent"
+            app:strokeWidth="0dp">
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/bg_liquid_glass_nav" />
+
+            <!-- Symmetrical Centered Menu View -->
+            <com.google.android.material.bottomnavigation.BottomNavigationView
+                android:id="@+id/navView"
+                style="@style/NavView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_gravity="center"
+                android:background="@android:color/transparent"
+                app:elevation="0dp"
+                app:itemActiveIndicatorStyle="@style/Widget.Material3.BottomNavigationView.ActiveIndicator"
+                app:itemIconSize="23dp"
+                app:itemPaddingBottom="6dp"
+                app:itemPaddingTop="8dp"
+                app:labelVisibilityMode="labeled"
+                app:menu="@menu/nav_menu" />
+
+        </com.google.android.material.card.MaterialCardView>
+    </FrameLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
