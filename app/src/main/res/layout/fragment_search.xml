@@ -2,10 +2,19 @@
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/searchRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="dev.brahmkshatriya.echo.ui.main.HomeFragment">
+    android:background="#070A0F"
+    tools:context="dev.brahmkshatriya.echo.ui.search.SearchFragment">
 
+    <!-- Ambient Aura Glow (Synced with active platform color) -->
+    <View
+        android:id="@+id/viewSearchAmbientGlow"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- Search Results / Feed -->
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipeRefresh"
         android:layout_width="match_parent"
@@ -16,48 +25,97 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipToPadding="false"
-            android:contentDescription="@string/home"
+            android:contentDescription="@string/search"
             android:orientation="vertical"
-            android:paddingHorizontal="20dp"
-            android:paddingVertical="8dp"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="150dp"
+            android:paddingBottom="100dp"
             app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
             tools:listitem="@layout/item_shelf_lists" />
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-    <FrameLayout
+    <!-- Header Frame: Title, Settings Icon and Universal Search Input -->
+    <LinearLayout
         android:id="@+id/appBarOutline"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="?navBackground"
-        android:paddingTop="12dp">
+        android:orientation="vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="22dp"
+        android:background="@android:color/transparent">
 
-        <View
+        <!-- Top Title Row: Savish Music (Enlarged) + Settings Icon -->
+        <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="?colorOutlineVariant" />
-    </FrameLayout>
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="14dp">
 
-    <com.google.android.material.search.SearchView
-        android:id="@+id/quickSearchView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:elevation="1dp"
-        android:hint="@string/search"
-        app:backHandlingEnabled="true"
-        app:backgroundTint="?navBackground"
-        app:closeIcon="@drawable/ic_close"
-        app:searchHintIcon="@drawable/ic_back">
+            <TextView
+                android:id="@+id/tvSearchTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:text="Savish Music"
+                android:textColor="@android:color/white"
+                android:textSize="30sp"
+                android:textStyle="bold" />
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/quickSearchRecyclerView"
-            android:background="?echoBackground"
+            <ImageView
+                android:id="@+id/btnSearchSettings"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:background="@drawable/shape_rounded_item_corner"
+                android:backgroundTint="#1AFFFFFF"
+                android:padding="8dp"
+                android:src="@drawable/ic_settings"
+                app:tint="@android:color/white" />
+        </RelativeLayout>
+
+        <!-- Dynamic Border Search Bar -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/searchBarContainer"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:clipToPadding="false"
-            android:contentDescription="@string/search"
-            android:orientation="vertical"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+            android:layout_height="48dp"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="#141B22"
+            app:strokeColor="#00E5FF"
+            app:strokeWidth="1.2dp">
 
-    </com.google.android.material.search.SearchView>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="14dp">
+
+                <ImageView
+                    android:id="@+id/ivSearchInputIcon"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@android:drawable/ic_menu_search"
+                    app:tint="#00E5FF" />
+
+                <EditText
+                    android:id="@+id/etSearchInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginStart="10dp"
+                    android:background="@android:color/transparent"
+                    android:hint="Search all tracks, albums, artists..."
+                    android:imeOptions="actionSearch"
+                    android:inputType="text"
+                    android:maxLines="1"
+                    android:textColor="@android:color/white"
+                    android:textColorHint="#6B7C8B"
+                    android:textSize="14sp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+    </LinearLayout>
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
