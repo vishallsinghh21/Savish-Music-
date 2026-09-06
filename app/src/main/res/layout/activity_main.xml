@@ -28,7 +28,7 @@
         app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
         tools:layout="@layout/fragment_player" />
 
-    <!-- Ultra Liquid Glass iOS-style Floating Bottom Navigation Bar -->
+    <!-- Ultra Liquid Glass Floating Navigation Bar -->
     <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="64dp"
@@ -43,13 +43,12 @@
 
         <com.google.android.material.bottomnavigation.BottomNavigationView
             android:id="@+id/navView"
+            style="@style/NavView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="@android:color/transparent"
             app:elevation="0dp"
             app:itemIconSize="22dp"
-            app:itemIconTint="@color/nav_item_tint"
-            app:itemTextColor="@color/nav_item_tint"
             app:labelVisibilityMode="labeled"
             app:menu="@menu/nav_menu" />
     </com.google.android.material.card.MaterialCardView>
