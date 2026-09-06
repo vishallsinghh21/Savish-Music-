@@ -31,7 +31,6 @@ import dev.brahmkshatriya.echo.ui.feed.FeedClickListener.Companion.getFeedListen
 import dev.brahmkshatriya.echo.ui.feed.FeedData
 import dev.brahmkshatriya.echo.ui.feed.FeedViewModel
 import dev.brahmkshatriya.echo.ui.main.MainFragment.Companion.applyInsets
-import dev.brahmkshatriya.echo.ui.player.PlayerViewModel
 import dev.brahmkshatriya.echo.utils.ContextUtils.observe
 import dev.brahmkshatriya.echo.utils.ui.AnimationUtils.setupTransition
 import kotlinx.coroutines.flow.combine
@@ -57,7 +56,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         }
     }
 
-    private val playerViewModel by activityViewModel<PlayerViewModel>()
     private val listener by lazy { getFeedListener(requireParentFragment()) }
     private val feedAdapter by lazy { getFeedAdapter(feedData, listener) }
 
@@ -83,7 +81,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         applyBackPressCallback()
         getTouchHelper(listener).attachToRecyclerView(binding.recyclerView)
 
-        // Bypassing empty Unified Extension container & Header items
+        // Direct Clean Feed RecyclerView
         configureGridLayout(
             binding.recyclerView,
             feedAdapter.withLoading(this)
@@ -96,9 +94,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             }
         }
 
-        // Bottom playback button triggers
+        // Quick refresh / play action trigger
         binding.btnPlayAction.setOnClickListener {
-            playerViewModel.playPause()
+            feedData.refresh()
         }
 
         setupPlatformSelection(binding)
@@ -123,11 +121,11 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             PlatformEntry("jiosaavn", binding.capsuleJioSaavn, binding.dotJioSaavn, binding.tvJioSaavn, "#00D2C4", "JioSaavn")
         )
 
-        // Permanent brand colored dots
+        // Permanent brand-colored dots & permanent white text
         entries.forEach { entry ->
             val color = Color.parseColor(entry.brandColorHex)
             entry.dot.backgroundTintList = ColorStateList.valueOf(color)
-            entry.tv.setTextColor(Color.WHITE) // Text hamesha Pure White rahega
+            entry.tv.setTextColor(Color.WHITE)
         }
 
         fun updateDiamondAura(activeColor: Int) {
@@ -174,12 +172,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             binding.etHomeSearch.hint = "Search songs in Savish ${target.name}..."
 
             if (triggerBackend) {
-                // Switch backend extension source to match selected capsule
-                feedData.current.value?.let { curr ->
-                    if (target.id != "all") {
-                        // Switch if extension matches
-                    }
-                }
                 feedData.refresh()
             }
         }
@@ -188,10 +180,10 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             entry.card.setOnClickListener { select(entry) }
         }
 
-        // Default: All media active
+        // Default selection
         select(entries[0], triggerBackend = false)
 
-        // Two-way sync: jab extension sheet se platform chunein, toh capsule auto switch ho jaye
+        // Two-way sync: Extensions sheet se switch hone par Home capsule automatically sync
         observe(feedData.current) { currentExt ->
             val extName = currentExt?.name?.lowercase() ?: "all"
             val matched = entries.find { entry ->
