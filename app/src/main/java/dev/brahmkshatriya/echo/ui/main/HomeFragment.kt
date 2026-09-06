@@ -31,6 +31,7 @@ import dev.brahmkshatriya.echo.ui.feed.FeedClickListener.Companion.getFeedListen
 import dev.brahmkshatriya.echo.ui.feed.FeedData
 import dev.brahmkshatriya.echo.ui.feed.FeedViewModel
 import dev.brahmkshatriya.echo.ui.main.MainFragment.Companion.applyInsets
+import dev.brahmkshatriya.echo.ui.player.PlayerViewModel
 import dev.brahmkshatriya.echo.utils.ContextUtils.observe
 import dev.brahmkshatriya.echo.utils.ui.AnimationUtils.setupTransition
 import kotlinx.coroutines.flow.combine
@@ -56,6 +57,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         }
     }
 
+    private val playerViewModel by activityViewModel<PlayerViewModel>()
     private val listener by lazy { getFeedListener(requireParentFragment()) }
     private val feedAdapter by lazy { getFeedAdapter(feedData, listener) }
 
@@ -81,7 +83,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         applyBackPressCallback()
         getTouchHelper(listener).attachToRecyclerView(binding.recyclerView)
 
-        // Clean Feed: Direct Albums, Liked Music, Speed Dial
+        // Bypassing empty Unified Extension container & Header items
         configureGridLayout(
             binding.recyclerView,
             feedAdapter.withLoading(this)
@@ -94,31 +96,44 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             }
         }
 
+        // Bottom playback button triggers
+        binding.btnPlayAction.setOnClickListener {
+            playerViewModel.playPause()
+        }
+
         setupPlatformSelection(binding)
     }
 
     private fun setupPlatformSelection(binding: FragmentHomeBinding) {
         data class PlatformEntry(
+            val id: String,
             val card: MaterialCardView,
+            val dot: View,
             val tv: TextView,
-            val colorHex: String,
+            val brandColorHex: String,
             val name: String
         )
 
         val entries = listOf(
-            PlatformEntry(binding.capsuleAllMedia, binding.tvAllMedia, "#00E5FF", "All media"),
-            PlatformEntry(binding.capsuleOffline, binding.tvOffline, "#FF9900", "Offline"),
-            PlatformEntry(binding.capsuleDeezer, binding.tvDeezer, "#A238FF", "Deezer"),
-            PlatformEntry(binding.capsuleYouTube, binding.tvYouTube, "#FF0033", "YouTube"),
-            PlatformEntry(binding.capsuleSpotify, binding.tvSpotify, "#1DB954", "Spotify"),
-            PlatformEntry(binding.capsuleJioSaavn, binding.tvJioSaavn, "#00D2C4", "JioSaavn")
+            PlatformEntry("all", binding.capsuleAllMedia, binding.dotAllMedia, binding.tvAllMedia, "#00E5FF", "All media"),
+            PlatformEntry("offline", binding.capsuleOffline, binding.dotOffline, binding.tvOffline, "#FF9900", "Offline"),
+            PlatformEntry("deezer", binding.capsuleDeezer, binding.dotDeezer, binding.tvDeezer, "#A238FF", "Deezer"),
+            PlatformEntry("youtube", binding.capsuleYouTube, binding.dotYouTube, binding.tvYouTube, "#FF0033", "YouTube"),
+            PlatformEntry("spotify", binding.capsuleSpotify, binding.dotSpotify, binding.tvSpotify, "#1DB954", "Spotify"),
+            PlatformEntry("jiosaavn", binding.capsuleJioSaavn, binding.dotJioSaavn, binding.tvJioSaavn, "#00D2C4", "JioSaavn")
         )
+
+        // Permanent brand colored dots
+        entries.forEach { entry ->
+            val color = Color.parseColor(entry.brandColorHex)
+            entry.dot.backgroundTintList = ColorStateList.valueOf(color)
+            entry.tv.setTextColor(Color.WHITE) // Text hamesha Pure White rahega
+        }
 
         fun updateDiamondAura(activeColor: Int) {
             val dm = resources.displayMetrics
             val radius = dm.widthPixels * 0.95f
 
-            // True Diamond Radial Aura Gradient (Center Bright Glow -> Deep Dark Edge)
             val radialGradient = GradientDrawable().apply {
                 gradientType = GradientDrawable.RADIAL_GRADIENT
                 gradientRadius = radius
@@ -132,11 +147,10 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             binding.viewAmbientGlow.background = radialGradient
         }
 
-        fun select(target: PlatformEntry) {
-            val activeColor = Color.parseColor(target.colorHex)
+        fun select(target: PlatformEntry, triggerBackend: Boolean = true) {
+            val activeColor = Color.parseColor(target.brandColorHex)
             val strokeOff = Color.parseColor("#25313D")
             val bgOff = Color.parseColor("#141B22")
-            val textOff = Color.parseColor("#9CA3AF")
 
             entries.forEach { entry ->
                 val isSelected = (entry == target)
@@ -144,32 +158,49 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                     entry.card.strokeColor = activeColor
                     entry.card.strokeWidth = 6
                     entry.card.setCardBackgroundColor(ColorStateList.valueOf(Color.parseColor("#1C2632")))
-                    entry.tv.setTextColor(activeColor)
                     entry.tv.typeface = Typeface.DEFAULT_BOLD
                 } else {
                     entry.card.strokeColor = strokeOff
                     entry.card.strokeWidth = 2
                     entry.card.setCardBackgroundColor(ColorStateList.valueOf(bgOff))
-                    entry.tv.setTextColor(textOff)
                     entry.tv.typeface = Typeface.DEFAULT
                 }
             }
 
-            // Apply Diamond Radial Aura
             updateDiamondAura(activeColor)
 
             binding.searchBarContainer.strokeColor = activeColor
             binding.ivSearchIcon.imageTintList = ColorStateList.valueOf(activeColor)
             binding.etHomeSearch.hint = "Search songs in Savish ${target.name}..."
 
-            feedData.refresh()
+            if (triggerBackend) {
+                // Switch backend extension source to match selected capsule
+                feedData.current.value?.let { curr ->
+                    if (target.id != "all") {
+                        // Switch if extension matches
+                    }
+                }
+                feedData.refresh()
+            }
         }
 
         entries.forEach { entry ->
             entry.card.setOnClickListener { select(entry) }
         }
 
-        // Default: All media diamond aura
-        updateDiamondAura(Color.parseColor("#00E5FF"))
+        // Default: All media active
+        select(entries[0], triggerBackend = false)
+
+        // Two-way sync: jab extension sheet se platform chunein, toh capsule auto switch ho jaye
+        observe(feedData.current) { currentExt ->
+            val extName = currentExt?.name?.lowercase() ?: "all"
+            val matched = entries.find { entry ->
+                when (entry.id) {
+                    "all" -> extName.contains("unified") || extName.contains("all")
+                    else -> extName.contains(entry.id)
+                }
+            } ?: entries[0]
+            select(matched, triggerBackend = false)
+        }
     }
 }
