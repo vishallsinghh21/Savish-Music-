@@ -140,10 +140,10 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         applyBackPressCallback()
         getTouchHelper(listener).attachToRecyclerView(binding.recyclerView)
 
-        // feedAdapter without HeaderAdapter suppresses duplicate middle buttons
+        // Loading adapter enabled so albums/songs render on the screen
         configureGridLayout(
             binding.recyclerView,
-            feedAdapter
+            feedAdapter.withLoading(this)
         )
 
         binding.swipeRefresh.run {
@@ -266,7 +266,21 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             binding.ivSearchIcon.imageTintList = ColorStateList.valueOf(activeColor)
             binding.etHomeSearch.hint = "Search songs in Savish ${item.name}..."
 
-            feedData.refresh()
+            // REAL EXTENSION BUTTON CONNECT: Matching button click to load actual albums/songs
+            if (item.id == null) {
+                feedData.refresh()
+            } else {
+                val buttonsObj = feedData.buttonsFlow.value
+                val matchedButton = buttonsObj.buttons.firstOrNull { btn ->
+                    btn.title.contains(item.name, ignoreCase = true) ||
+                    item.name.contains(btn.title, ignoreCase = true)
+                }
+                if (matchedButton != null) {
+                    feedData.buttonsFlow.value = buttonsObj.copy(selected = matchedButton)
+                } else {
+                    feedData.refresh()
+                }
+            }
         }
 
         dynamicList.forEachIndexed { index, item ->
