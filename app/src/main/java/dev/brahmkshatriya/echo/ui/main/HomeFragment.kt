@@ -28,9 +28,9 @@ import dev.brahmkshatriya.echo.common.MusicExtension
 import dev.brahmkshatriya.echo.common.clients.HomeFeedClient
 import dev.brahmkshatriya.echo.common.models.ExtensionType
 import dev.brahmkshatriya.echo.common.models.Feed
-import dev.brahmkshatriya.echo.common.models.Feed.Buttons.Companion.EMPTY
 import dev.brahmkshatriya.echo.common.models.Shelf
 import dev.brahmkshatriya.echo.databinding.FragmentHomeBinding
+import dev.brahmkshatriya.echo.di.App
 import dev.brahmkshatriya.echo.extensions.ExtensionLoader
 import dev.brahmkshatriya.echo.extensions.ExtensionUtils.getAs
 import dev.brahmkshatriya.echo.extensions.cache.Cached
@@ -59,6 +59,7 @@ import java.io.FileOutputStream
 
 class HomeFragment : Fragment(R.layout.fragment_home) {
 
+    private val app by inject<App>()
     private val extensionLoader by inject<ExtensionLoader>()
 
     private val feedData by lazy {
@@ -66,18 +67,17 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         val id = "home"
         vm.getFeedData(
             id = id,
-            default = EMPTY,
             cached = {
-                val curr = current.value ?: return@getFeedData null
+                val curr = extensionLoader.current.value ?: return@getFeedData null
                 val feed = Cached.getFeedShelf(app, curr.id, id).getOrNull()
                 feed?.let { FeedData.State(curr.id, null, it) }
             },
-            getData = {
-                val curr = current.value ?: return@getFeedData null
-                val feed = Cached.savingFeed(
-                    app, curr, id,
-                    curr.getAs<HomeFeedClient, Feed<Shelf>> { loadHomeFeed() }.getOrThrow()
-                )
+            loader = {
+                val curr = extensionLoader.current.value ?: return@getFeedData null
+                val feed = runCatching {
+                    val loadedFeed = curr.getAs<HomeFeedClient, Feed<Shelf>> { loadHomeFeed() }.getOrThrow()
+                    Cached.savingFeed(app, curr, id, loadedFeed)
+                }.getOrNull() ?: Feed(emptyList())
                 FeedData.State(curr.id, null, feed)
             }
         )
@@ -317,7 +317,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                 }
                 container.addView(allMediaCard)
 
-                // Installed Capsules
+                // Installed Platform Capsules
                 list.forEach { ext ->
                     val colorHex = resolveColor(ext.name)
                     val card = MaterialCardView(ctx).apply {
