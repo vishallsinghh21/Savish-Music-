@@ -25,8 +25,6 @@ import com.google.android.material.card.MaterialCardView
 import com.google.android.material.transition.MaterialSharedAxis
 import dev.brahmkshatriya.echo.R
 import dev.brahmkshatriya.echo.common.clients.HomeFeedClient
-import dev.brahmkshatriya.echo.common.models.EchoMediaItem
-import dev.brahmkshatriya.echo.common.models.Extension
 import dev.brahmkshatriya.echo.common.models.ExtensionType
 import dev.brahmkshatriya.echo.common.models.Feed
 import dev.brahmkshatriya.echo.common.models.Feed.Buttons.Companion.EMPTY
@@ -80,12 +78,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
     private val listener by lazy { getFeedListener(requireParentFragment()) }
     private val feedAdapter by lazy { getFeedAdapter(feedData, listener) }
-
-    private data class PlatformCapsule(
-        val extension: Extension?,
-        val name: String,
-        val colorHex: String
-    )
 
     private fun dp(ctx: Context, v: Float): Int {
         return TypedValue.applyDimension(
@@ -185,7 +177,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             } else false
         }
 
-        // Auto-detect extensions directly from ExtensionLoader
         setupDynamicExtensionCapsules(binding)
     }
 
@@ -236,25 +227,15 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             binding.viewAmbientGlow.background = radialGradient
         }
 
-        // Auto-observe all installed extensions
         viewLifecycleOwner.lifecycleScope.launch {
-            extensionLoader.getFlow(ExtensionType.MUSIC).collectLatest { installedExtensions ->
+            extensionLoader.getFlow(ExtensionType.MUSIC).collectLatest { list ->
                 val container = binding.layoutCapsulesContainer
                 container.removeAllViews()
 
-                val capsuleList = mutableListOf<PlatformCapsule>()
-                capsuleList.add(PlatformCapsule(null, "All media", "#00E5FF"))
+                val cards = mutableListOf<Pair<MaterialCardView, String>>()
 
-                installedExtensions.forEach { ext ->
-                    capsuleList.add(
-                        PlatformCapsule(ext, ext.name, resolveColor(ext.name))
-                    )
-                }
-
-                val cards = mutableListOf<Pair<MaterialCardView, PlatformCapsule>>()
-
-                fun applySelection(targetCard: MaterialCardView, item: PlatformCapsule) {
-                    val activeColor = Color.parseColor(item.colorHex)
+                fun applySelection(targetCard: MaterialCardView, name: String, colorHex: String, extIndex: Int) {
+                    val activeColor = Color.parseColor(colorHex)
                     val strokeOff = Color.parseColor("#25313D")
                     val bgOff = Color.parseColor("#141B22")
 
@@ -276,22 +257,62 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                     updateDiamondAura(activeColor)
                     binding.searchBarContainer.strokeColor = activeColor
                     binding.ivSearchIcon.imageTintList = ColorStateList.valueOf(activeColor)
-                    binding.etHomeSearch.hint = "Search songs in Savish ${item.name}..."
+                    binding.etHomeSearch.hint = "Search songs in Savish $name..."
 
-                    // Switch active extension: Trigger real backend loading
-                    if (item.extension != null) {
-                        feedData.current.value = item.extension
-                    } else {
-                        // Fallback: Use first available installed extension
-                        val defaultExt = installedExtensions.firstOrNull()
-                        if (defaultExt != null) {
-                            feedData.current.value = defaultExt
-                        }
+                    if (extIndex >= 0 && extIndex < list.size) {
+                        feedData.current.value = list[extIndex]
+                    } else if (list.isNotEmpty()) {
+                        feedData.current.value = list.first()
                     }
                     feedData.refresh()
                 }
 
-                capsuleList.forEachIndexed { index, item ->
+                // First Capsule: All media
+                run {
+                    val card = MaterialCardView(ctx).apply {
+                        radius = dp(ctx, 24f).toFloat()
+                        strokeWidth = dp(ctx, 1.2f)
+                        strokeColor = Color.parseColor("#25313D")
+                        setCardBackgroundColor(ColorStateList.valueOf(Color.parseColor("#141B22")))
+                        val lp = ViewGroup.MarginLayoutParams(
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                            dp(ctx, 48f)
+                        )
+                        lp.setMargins(0, 0, dp(ctx, 10f), 0)
+                        layoutParams = lp
+                    }
+                    val row = LinearLayout(ctx).apply {
+                        orientation = LinearLayout.HORIZONTAL
+                        gravity = Gravity.CENTER
+                        setPadding(dp(ctx, 18f), 0, dp(ctx, 18f), 0)
+                    }
+                    val dot = View(ctx).apply {
+                        val dotLp = ViewGroup.MarginLayoutParams(dp(ctx, 9f), dp(ctx, 9f))
+                        dotLp.setMargins(0, 0, dp(ctx, 8f), 0)
+                        layoutParams = dotLp
+                        background = ContextCompat.getDrawable(ctx, android.R.drawable.presence_online)
+                        backgroundTintList = ColorStateList.valueOf(Color.parseColor("#00E5FF"))
+                    }
+                    val tv = TextView(ctx).apply {
+                        text = "All media"
+                        textSize = 15f
+                        setTextColor(Color.WHITE)
+                        typeface = Typeface.DEFAULT_BOLD
+                    }
+                    row.addView(dot)
+                    row.addView(tv)
+                    card.addView(row)
+                    cards.add(card to "All media")
+
+                    card.setOnClickListener {
+                        applySelection(card, "All media", "#00E5FF", -1)
+                    }
+                    container.addView(card)
+                }
+
+                // Dynamic Capsules auto-detected from installed extensions
+                list.forEachIndexed { index, ext ->
+                    val colorHex = resolveColor(ext.name)
                     val card = MaterialCardView(ctx).apply {
                         radius = dp(ctx, 24f).toFloat()
                         strokeWidth = dp(ctx, 1.2f)
@@ -316,11 +337,11 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                         dotLp.setMargins(0, 0, dp(ctx, 8f), 0)
                         layoutParams = dotLp
                         background = ContextCompat.getDrawable(ctx, android.R.drawable.presence_online)
-                        backgroundTintList = ColorStateList.valueOf(Color.parseColor(item.colorHex))
+                        backgroundTintList = ColorStateList.valueOf(Color.parseColor(colorHex))
                     }
 
                     val tv = TextView(ctx).apply {
-                        text = item.name
+                        text = ext.name
                         textSize = 15f
                         setTextColor(Color.WHITE)
                         typeface = Typeface.DEFAULT_BOLD
@@ -329,18 +350,19 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                     row.addView(dot)
                     row.addView(tv)
                     card.addView(row)
-                    cards.add(card to item)
+                    cards.add(card to ext.name)
 
                     card.setOnClickListener {
-                        applySelection(card, item)
+                        applySelection(card, ext.name, colorHex, index)
                     }
 
                     container.addView(card)
+                }
 
-                    // Default select first on start
-                    if (index == 0) {
-                        applySelection(card, item)
-                    }
+                // Default selection on launch
+                if (cards.isNotEmpty()) {
+                    val firstCard = cards.first().first
+                    applySelection(firstCard, "All media", "#00E5FF", -1)
                 }
             }
         }
