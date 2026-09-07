@@ -2,9 +2,11 @@ package dev.brahmkshatriya.echo.ui.main
 
 import android.content.Context
 import android.content.res.ColorStateList
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.net.Uri
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.Gravity
@@ -14,6 +16,7 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import androidx.fragment.app.Fragment
@@ -44,6 +47,8 @@ import dev.brahmkshatriya.echo.utils.ui.AnimationUtils.setupTransition
 import kotlinx.coroutines.flow.combine
 import org.koin.androidx.viewmodel.ext.android.activityViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import java.io.File
+import java.io.FileOutputStream
 
 class HomeFragment : Fragment(R.layout.fragment_home) {
 
@@ -67,8 +72,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private val listener by lazy { getFeedListener(requireParentFragment()) }
     private val feedAdapter by lazy { getFeedAdapter(feedData, listener) }
 
-    private data class SourceCapsule(val id: String?, val name: String, val colorHex: String)
-    private var selectedSource = SourceCapsule(null, "All media", "#00E5FF")
+    private data class PlatformCapsule(val id: String?, val name: String, val colorHex: String)
+    private var activePlatform = PlatformCapsule(null, "All media", "#00E5FF")
 
     private fun dp(ctx: Context, v: Float): Int {
         return TypedValue.applyDimension(
@@ -78,8 +83,42 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         ).toInt()
     }
 
+    // Photo picker result launcher
+    private val pickImageLauncher = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { saveAndSetAvatar(it) }
+    }
+
+    private var bindingRef: FragmentHomeBinding? = null
+
+    private fun saveAndSetAvatar(uri: Uri) {
+        val ctx = context ?: return
+        try {
+            val inputStream = ctx.contentResolver.openInputStream(uri) ?: return
+            val file = File(ctx.filesDir, "custom_profile_pic.png")
+            val outputStream = FileOutputStream(file)
+            inputStream.copyTo(outputStream)
+            inputStream.close()
+            outputStream.close()
+            loadSavedAvatar()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun loadSavedAvatar() {
+        val ctx = context ?: return
+        val file = File(ctx.filesDir, "custom_profile_pic.png")
+        if (file.exists()) {
+            val bitmap = BitmapFactory.decodeFile(file.absolutePath)
+            bindingRef?.ivProfileAvatar?.setImageBitmap(bitmap)
+        }
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         val binding = FragmentHomeBinding.bind(view)
+        bindingRef = binding
         setupTransition(view, false, MaterialSharedAxis.Y)
         applyInsets(binding.recyclerView, binding.appBarOutline) {
             binding.swipeRefresh.configure(it)
@@ -100,10 +139,10 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         applyBackPressCallback()
         getTouchHelper(listener).attachToRecyclerView(binding.recyclerView)
 
-        // Directly bind feedAdapter so HeaderAdapter never injects duplicate middle buttons
+        // Loading and state binding restored so circular loading spinner stops after feed is loaded
         configureGridLayout(
             binding.recyclerView,
-            feedAdapter
+            feedAdapter.withLoading(this)
         )
 
         binding.swipeRefresh.run {
@@ -113,10 +152,19 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             }
         }
 
+        // Profile Avatar: Single Click -> Settings Sheet
         binding.ivProfileAvatar.setOnClickListener {
             ExtensionsListBottomSheet.newInstance(ExtensionType.MUSIC)
                 .show(parentFragmentManager, null)
         }
+
+        // Profile Avatar: Long Press -> Open Gallery
+        binding.ivProfileAvatar.setOnLongClickListener {
+            pickImageLauncher.launch("image/*")
+            true
+        }
+
+        loadSavedAvatar()
 
         binding.etHomeSearch.setOnEditorActionListener { v, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_SEARCH) {
@@ -127,10 +175,15 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             } else false
         }
 
-        setupExtensionCapsules(binding)
+        setupExtensionsCapsules(binding, uiViewModel)
     }
 
-    private fun setupExtensionCapsules(binding: FragmentHomeBinding) {
+    override fun onDestroyView() {
+        super.onDestroyView()
+        bindingRef = null
+    }
+
+    private fun setupExtensionsCapsules(binding: FragmentHomeBinding, uiViewModel: UiViewModel) {
         val ctx = context ?: return
         val container = binding.layoutCapsulesContainer
 
@@ -173,97 +226,117 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             binding.viewAmbientGlow.background = radialGradient
         }
 
-        val sources = listOf(
-            "All media", "Offline", "iHeartRadio", "KissKH", "AniDB",
-            "Groove Music", "Radio Browser", "Youtube Music", "KHInsider",
-            "OpenSubsonic", "Spotify", "IPTV", "SoundCloud", "Anikoto", "Google Drive"
-        )
+        // Live observation of installed extensions
+        observe(uiViewModel.extensions) { installed ->
+            val dynamicList = mutableListOf(PlatformCapsule(null, "All media", "#00E5FF"))
 
-        val dynamicList = sources.map { name ->
-            val isAll = name == "All media"
-            SourceCapsule(if (isAll) null else name.lowercase(), name, resolveColor(name))
-        }
+            // Add installed extensions
+            installed.forEach { ext ->
+                dynamicList.add(PlatformCapsule(ext.id, ext.name, resolveColor(ext.name)))
+            }
 
-        container.removeAllViews()
-        val cards = mutableListOf<Pair<MaterialCardView, SourceCapsule>>()
-
-        fun applySelection(targetCard: MaterialCardView, item: SourceCapsule) {
-            selectedSource = item
-            val activeColor = Color.parseColor(item.colorHex)
-            val strokeOff = Color.parseColor("#25313D")
-            val bgOff = Color.parseColor("#141B22")
-
-            cards.forEach { (c, _) ->
-                val isSel = (c == targetCard)
-                if (isSel) {
-                    c.strokeColor = activeColor
-                    c.strokeWidth = dp(ctx, 2.5f)
-                    c.setCardBackgroundColor(
-                        ColorStateList.valueOf(ColorUtils.setAlphaComponent(activeColor, 45))
-                    )
-                } else {
-                    c.strokeColor = strokeOff
-                    c.strokeWidth = dp(ctx, 1.2f)
-                    c.setCardBackgroundColor(ColorStateList.valueOf(bgOff))
+            // If only single unified extension exists, populate standard sources
+            if (dynamicList.size <= 2) {
+                val subSources = listOf(
+                    "Offline", "YouTube Music", "Spotify", "JioSaavn", "SoundCloud",
+                    "Deezer", "iHeartRadio", "KissKH", "AniDB", "Groove Music",
+                    "Radio Browser", "KHInsider", "OpenSubsonic", "IPTV", "Google Drive"
+                )
+                subSources.forEach { name ->
+                    if (dynamicList.none { it.name.equals(name, ignoreCase = true) }) {
+                        dynamicList.add(PlatformCapsule(name.lowercase(), name, resolveColor(name)))
+                    }
                 }
             }
 
-            updateDiamondAura(activeColor)
-            binding.searchBarContainer.strokeColor = activeColor
-            binding.ivSearchIcon.imageTintList = ColorStateList.valueOf(activeColor)
-            binding.etHomeSearch.hint = "Search songs in Savish ${item.name}..."
+            container.removeAllViews()
+            val cards = mutableListOf<Pair<MaterialCardView, PlatformCapsule>>()
 
-            feedData.refresh()
-        }
+            fun applySelection(targetCard: MaterialCardView, item: PlatformCapsule) {
+                activePlatform = item
+                val activeColor = Color.parseColor(item.colorHex)
+                val strokeOff = Color.parseColor("#25313D")
+                val bgOff = Color.parseColor("#141B22")
 
-        dynamicList.forEachIndexed { index, item ->
-            val card = MaterialCardView(ctx).apply {
-                radius = dp(ctx, 22f).toFloat()
-                strokeWidth = dp(ctx, 1.2f)
-                strokeColor = Color.parseColor("#25313D")
-                setCardBackgroundColor(ColorStateList.valueOf(Color.parseColor("#141B22")))
-                val lp = ViewGroup.MarginLayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    dp(ctx, 42f)
-                )
-                lp.setMargins(0, 0, dp(ctx, 8f), 0)
-                layoutParams = lp
+                cards.forEach { (c, _) ->
+                    val isSel = (c == targetCard)
+                    if (isSel) {
+                        c.strokeColor = activeColor
+                        c.strokeWidth = dp(ctx, 2.5f)
+                        c.setCardBackgroundColor(
+                            ColorStateList.valueOf(ColorUtils.setAlphaComponent(activeColor, 45))
+                        )
+                    } else {
+                        c.strokeColor = strokeOff
+                        c.strokeWidth = dp(ctx, 1.2f)
+                        c.setCardBackgroundColor(ColorStateList.valueOf(bgOff))
+                    }
+                }
+
+                updateDiamondAura(activeColor)
+                binding.searchBarContainer.strokeColor = activeColor
+                binding.ivSearchIcon.imageTintList = ColorStateList.valueOf(activeColor)
+                binding.etHomeSearch.hint = "Search songs in Savish ${item.name}..."
+
+                // Switch active extension if user clicked an installed extension
+                val matchingExt = installed.firstOrNull { it.id == item.id }
+                if (matchingExt != null) {
+                    feedData.current.value = matchingExt
+                } else {
+                    feedData.refresh()
+                }
             }
 
-            val row = LinearLayout(ctx).apply {
-                orientation = LinearLayout.HORIZONTAL
-                gravity = Gravity.CENTER
-                setPadding(dp(ctx, 16f), 0, dp(ctx, 16f), 0)
-            }
+            dynamicList.forEachIndexed { index, item ->
+                // Enlarged Capsules
+                val card = MaterialCardView(ctx).apply {
+                    radius = dp(ctx, 24f).toFloat()
+                    strokeWidth = dp(ctx, 1.2f)
+                    strokeColor = Color.parseColor("#25313D")
+                    setCardBackgroundColor(ColorStateList.valueOf(Color.parseColor("#141B22")))
+                    val lp = ViewGroup.MarginLayoutParams(
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        dp(ctx, 48f)
+                    )
+                    lp.setMargins(0, 0, dp(ctx, 10f), 0)
+                    layoutParams = lp
+                }
 
-            val dot = View(ctx).apply {
-                val dotLp = ViewGroup.MarginLayoutParams(dp(ctx, 8f), dp(ctx, 8f))
-                dotLp.setMargins(0, 0, dp(ctx, 8f), 0)
-                layoutParams = dotLp
-                background = ContextCompat.getDrawable(ctx, android.R.drawable.presence_online)
-                backgroundTintList = ColorStateList.valueOf(Color.parseColor(item.colorHex))
-            }
+                val row = LinearLayout(ctx).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER
+                    setPadding(dp(ctx, 18f), 0, dp(ctx, 18f), 0)
+                }
 
-            val tv = TextView(ctx).apply {
-                text = item.name
-                textSize = 14f
-                setTextColor(Color.WHITE)
-                typeface = Typeface.DEFAULT_BOLD
-            }
+                val dot = View(ctx).apply {
+                    val dotLp = ViewGroup.MarginLayoutParams(dp(ctx, 9f), dp(ctx, 9f))
+                    dotLp.setMargins(0, 0, dp(ctx, 8f), 0)
+                    layoutParams = dotLp
+                    background = ContextCompat.getDrawable(ctx, android.R.drawable.presence_online)
+                    backgroundTintList = ColorStateList.valueOf(Color.parseColor(item.colorHex))
+                }
 
-            row.addView(dot)
-            row.addView(tv)
-            card.addView(row)
-            cards.add(card to item)
+                val tv = TextView(ctx).apply {
+                    text = item.name
+                    textSize = 15f
+                    setTextColor(Color.WHITE)
+                    typeface = Typeface.DEFAULT_BOLD
+                }
 
-            card.setOnClickListener {
-                applySelection(card, item)
-            }
+                row.addView(dot)
+                row.addView(tv)
+                card.addView(row)
+                cards.add(card to item)
 
-            container.addView(card)
+                card.setOnClickListener {
+                    applySelection(card, item)
+                }
 
-            if (index == 0) {
-                applySelection(card, item)
+                container.addView(card)
+
+                if (index == 0) {
+                    applySelection(card, item)
+                }
             }
         }
     }
