@@ -120,7 +120,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         bindingRef = binding
         setupTransition(view, false, MaterialSharedAxis.Y)
 
-        // Exact applyInsets call signature matching Echo base
         applyInsets(binding.recyclerView, binding.appBarOutline) {
             binding.swipeRefresh.configure(it)
         }
@@ -141,7 +140,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         applyBackPressCallback()
         getTouchHelper(listener).attachToRecyclerView(binding.recyclerView)
 
-        // Bind directly to feedAdapter so duplicate middle button strips are excluded
+        // feedAdapter without HeaderAdapter suppresses duplicate middle buttons
         configureGridLayout(
             binding.recyclerView,
             feedAdapter
@@ -154,13 +153,11 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             }
         }
 
-        // Profile click: settings sheet
         binding.ivProfileAvatar.setOnClickListener {
             ExtensionsListBottomSheet.newInstance(ExtensionType.MUSIC)
                 .show(parentFragmentManager, null)
         }
 
-        // Profile long press: photo picker
         binding.ivProfileAvatar.setOnLongClickListener {
             pickImageLauncher.launch("image/*")
             true
@@ -289,7 +286,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             val row = LinearLayout(ctx).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER
-                setPadding(dp(ctx, 18f), 0, dp(dp(ctx, 1f).toFloat(), 0f).coerceAtLeast(0), 0)
+                setPadding(dp(ctx, 18f), 0, dp(ctx, 18f), 0)
             }
 
             val dot = View(ctx).apply {
