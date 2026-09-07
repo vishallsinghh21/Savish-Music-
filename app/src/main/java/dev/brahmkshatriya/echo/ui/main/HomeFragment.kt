@@ -100,10 +100,10 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         applyBackPressCallback()
         getTouchHelper(listener).attachToRecyclerView(binding.recyclerView)
 
-        // Middle shelf controls excluded so duplicate buttons strip is removed
+        // Pass false to showButtons to completely destroy the middle buttons row
         configureGridLayout(
             binding.recyclerView,
-            feedAdapter.withLoading(this)
+            feedAdapter.withLoading(this, showButtons = false)
         )
 
         binding.swipeRefresh.run {
@@ -173,7 +173,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             binding.viewAmbientGlow.background = radialGradient
         }
 
-        // Sub-sources corresponding directly to Unified Extension
         val sources = listOf(
             "All media", "Offline", "iHeartRadio", "KissKH", "AniDB",
             "Groove Music", "Radio Browser", "Youtube Music", "KHInsider",
@@ -269,3 +268,4 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         }
     }
 }
+
