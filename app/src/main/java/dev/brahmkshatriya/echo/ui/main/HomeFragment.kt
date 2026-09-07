@@ -70,10 +70,12 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             feed?.let { FeedData.State(curr.id, null, it) }
         }) {
             val curr = current.value ?: return@getFeedData null
-            val feed = Cached.savingFeed(
-                app, curr, id,
-                curr.getAs<HomeFeedClient, Feed<Shelf>> { loadHomeFeed() }.getOrThrow()
-            )
+            val feed = runCatching {
+                Cached.savingFeed(
+                    app, curr, id,
+                    curr.getAs<HomeFeedClient, Feed<Shelf>> { loadHomeFeed() }.getOrThrow()
+                )
+            }.getOrNull() ?: Feed(emptyList())
             FeedData.State(curr.id, null, feed)
         }
     }
@@ -234,7 +236,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             binding.viewAmbientGlow.background = radialGradient
         }
 
-        // Two-Way Sync Engine: Extension List aur Selected Extension dono ko live observe karega
         viewLifecycleOwner.lifecycleScope.launch {
             combine(extensionLoader.music, extensionLoader.current) { list, activeCurrent ->
                 list to activeCurrent
@@ -242,7 +243,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                 val container = binding.layoutCapsulesContainer
                 container.removeAllViews()
 
-                // Map of (extensionId -> Pair(cardView, colorHex))
                 val capsuleViews = mutableMapOf<String, Pair<MaterialCardView, String>>()
                 val strokeOff = Color.parseColor("#25313D")
                 val bgOff = Color.parseColor("#141B22")
@@ -314,7 +314,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                 }
                 container.addView(allMediaCard)
 
-                // Dynamically create capsules for each installed extension
+                // Installed Capsules
                 list.forEach { ext ->
                     val colorHex = resolveColor(ext.name)
                     val card = MaterialCardView(ctx).apply {
@@ -357,15 +357,13 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                     capsuleViews[ext.id] = card to colorHex
 
                     card.setOnClickListener {
-                        // Extension select karo - baaki sync reactive engine khud karega
                         extensionLoader.setupMusicExtension(ext, true)
                     }
 
                     container.addView(card)
                 }
 
-                // === TWO-WAY REALTIME DISPATCH ===
-                // Agar bottom sheet se ya kahin se bhi activeCurrent badla, yahan turant pakad kar UI aur Feed update hogi
+                // Two-Way Sync
                 val activeExt = activeCurrent ?: list.firstOrNull()
                 if (activeExt != null) {
                     val matchingEntry = capsuleViews[activeExt.id]
@@ -373,7 +371,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                         applySelectionUI(matchingEntry.first, activeExt.name, matchingEntry.second)
                     }
 
-                    // FeedData ke current state ko sync karke refresh call kiya taaki songs/albums turant load hon
                     if (feedData.current.value?.id != activeExt.id) {
                         feedData.current.value = activeExt
                         feedData.refresh()
