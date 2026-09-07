@@ -64,20 +64,23 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private val feedData by lazy {
         val vm by viewModel<FeedViewModel>()
         val id = "home"
-        vm.getFeedData(id, EMPTY, cached = {
-            val curr = current.value ?: return@getFeedData null
-            val feed = Cached.getFeedShelf(app, curr.id, id).getOrNull()
-            feed?.let { FeedData.State(curr.id, null, it) }
-        }) {
-            val curr = current.value ?: return@getFeedData null
-            val feed = runCatching {
-                Cached.savingFeed(
+        vm.getFeedData(
+            id = id,
+            default = EMPTY,
+            cached = {
+                val curr = current.value ?: return@getFeedData null
+                val feed = Cached.getFeedShelf(app, curr.id, id).getOrNull()
+                feed?.let { FeedData.State(curr.id, null, it) }
+            },
+            getData = {
+                val curr = current.value ?: return@getFeedData null
+                val feed = Cached.savingFeed(
                     app, curr, id,
                     curr.getAs<HomeFeedClient, Feed<Shelf>> { loadHomeFeed() }.getOrThrow()
                 )
-            }.getOrNull() ?: Feed(emptyList())
-            FeedData.State(curr.id, null, feed)
-        }
+                FeedData.State(curr.id, null, feed)
+            }
+        )
     }
 
     private val listener by lazy { getFeedListener(requireParentFragment()) }
