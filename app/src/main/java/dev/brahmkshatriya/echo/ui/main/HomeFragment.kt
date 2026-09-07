@@ -24,6 +24,7 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.transition.MaterialSharedAxis
 import dev.brahmkshatriya.echo.R
+import dev.brahmkshatriya.echo.common.MusicExtension
 import dev.brahmkshatriya.echo.common.clients.HomeFeedClient
 import dev.brahmkshatriya.echo.common.models.ExtensionType
 import dev.brahmkshatriya.echo.common.models.Feed
@@ -228,14 +229,13 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
-            extensionLoader.getFlow(ExtensionType.MUSIC).collectLatest { list ->
+            extensionLoader.music.collectLatest { list ->
                 val container = binding.layoutCapsulesContainer
                 container.removeAllViews()
 
                 val cards = mutableListOf<Pair<MaterialCardView, String>>()
 
-                @Suppress("UNCHECKED_CAST")
-                fun applySelection(targetCard: MaterialCardView, name: String, colorHex: String, extIndex: Int) {
+                fun applySelection(targetCard: MaterialCardView, name: String, colorHex: String, targetExt: MusicExtension?) {
                     val activeColor = Color.parseColor(colorHex)
                     val strokeOff = Color.parseColor("#25313D")
                     val bgOff = Color.parseColor("#141B22")
@@ -260,9 +260,10 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                     binding.ivSearchIcon.imageTintList = ColorStateList.valueOf(activeColor)
                     binding.etHomeSearch.hint = "Search songs in Savish $name..."
 
-                    // Type match using raw/generic cast to avoid Unresolved reference
-                    val targetExt = if (extIndex in list.indices) list[extIndex] else list.firstOrNull()
-                    (feedData.current as? kotlinx.coroutines.flow.MutableStateFlow<Any?>)?.value = targetExt
+                    val selectedExt = targetExt ?: list.firstOrNull()
+                    if (selectedExt != null) {
+                        extensionLoader.setupMusicExtension(selectedExt, true)
+                    }
                     feedData.refresh()
                 }
 
@@ -304,13 +305,13 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                     cards.add(card to "All media")
 
                     card.setOnClickListener {
-                        applySelection(card, "All media", "#00E5FF", -1)
+                        applySelection(card, "All media", "#00E5FF", null)
                     }
                     container.addView(card)
                 }
 
-                // Dynamic Capsules auto-detected from installed extensions
-                list.forEachIndexed { index, ext ->
+                // Dynamic Capsules from installed Music extensions
+                list.forEach { ext ->
                     val colorHex = resolveColor(ext.name)
                     val card = MaterialCardView(ctx).apply {
                         radius = dp(ctx, 24f).toFloat()
@@ -352,7 +353,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                     cards.add(card to ext.name)
 
                     card.setOnClickListener {
-                        applySelection(card, ext.name, colorHex, index)
+                        applySelection(card, ext.name, colorHex, ext)
                     }
 
                     container.addView(card)
@@ -360,7 +361,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
                 if (cards.isNotEmpty()) {
                     val firstCard = cards.first().first
-                    applySelection(firstCard, "All media", "#00E5FF", -1)
+                    applySelection(firstCard, "All media", "#00E5FF", null)
                 }
             }
         }
