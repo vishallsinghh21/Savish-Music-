@@ -67,6 +67,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private val listener by lazy { getFeedListener(requireParentFragment()) }
     private val feedAdapter by lazy { getFeedAdapter(feedData, listener) }
 
+    private data class SourceCapsule(val id: String?, val name: String, val colorHex: String)
+    private var selectedSource = SourceCapsule(null, "All media", "#00E5FF")
+
     private fun dp(ctx: Context, v: Float): Int {
         return TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_DIP,
@@ -97,6 +100,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         applyBackPressCallback()
         getTouchHelper(listener).attachToRecyclerView(binding.recyclerView)
 
+        // HeaderAdapter intentionally excluded to strip the duplicate middle shelf buttons
         configureGridLayout(
             binding.recyclerView,
             feedAdapter.withLoading(this)
@@ -123,14 +127,12 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             } else false
         }
 
-        setupCapsuleSystem(binding)
+        setupDynamicExtensionCapsules(binding)
     }
 
-    private fun setupCapsuleSystem(binding: FragmentHomeBinding) {
+    private fun setupDynamicExtensionCapsules(binding: FragmentHomeBinding) {
         val ctx = context ?: return
         val container = binding.layoutCapsulesContainer
-
-        data class CapsuleInfo(val name: String, val colorHex: String)
 
         fun resolveColor(name: String): String {
             val s = name.lowercase()
@@ -139,13 +141,18 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                 "youtube" in s -> "#FF0033"
                 "saavn" in s -> "#00D2C4"
                 "deezer" in s -> "#A238FF"
-                "apple" in s -> "#FC3C44"
-                "offline" in s -> "#FF9900"
-                "soundcloud" in s -> "#FF5500"
-                "drive" in s -> "#FFC107"
+                "offline" in s -> "#FFA500"
                 "iheart" in s -> "#C92434"
                 "kiss" in s -> "#E91E63"
+                "anidb" in s -> "#FF8A00"
                 "groove" in s -> "#0078D7"
+                "radio" in s -> "#00B0FF"
+                "khinsider" in s -> "#FF6D00"
+                "opensubsonic" in s -> "#607D8B"
+                "iptv" in s -> "#7C4DFF"
+                "soundcloud" in s -> "#FF5500"
+                "anikoto" in s -> "#00BCD4"
+                "drive" in s -> "#FFC107"
                 else -> "#00E5FF"
             }
         }
@@ -156,108 +163,129 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             val radialGradient = GradientDrawable().apply {
                 gradientType = GradientDrawable.RADIAL_GRADIENT
                 gradientRadius = radius
-                setGradientCenter(0.5f, 0.32f)
+                setGradientCenter(0.5f, 0.28f)
                 colors = intArrayOf(
                     ColorUtils.setAlphaComponent(activeColor, 120),
-                    ColorUtils.setAlphaComponent(activeColor, 45),
+                    ColorUtils.setAlphaComponent(activeColor, 40),
                     Color.parseColor("#070A0F")
                 )
             }
             binding.viewAmbientGlow.background = radialGradient
         }
 
-        val platformList = mutableListOf(
-            CapsuleInfo("All media", "#00E5FF"),
-            CapsuleInfo("Offline", "#FF9900"),
-            CapsuleInfo("YouTube", "#FF0033"),
-            CapsuleInfo("Spotify", "#1DB954"),
-            CapsuleInfo("JioSaavn", "#00D2C4"),
-            CapsuleInfo("Deezer", "#A238FF")
-        )
+        // Live sync with Unified Extension feed buttons / sources
+        observe(feedData.buttonsFlow) { buttonsList ->
+            val dynamicList = mutableListOf(SourceCapsule(null, "All media", "#00E5FF"))
 
-        feedData.current.value?.let { curr ->
-            if (platformList.none { it.name.equals(curr.name, ignoreCase = true) }) {
-                platformList.add(CapsuleInfo(curr.name, resolveColor(curr.name)))
+            // Map sub-sources from Unified Extension
+            buttonsList?.forEach { btn ->
+                val btnName = btn.title
+                dynamicList.add(SourceCapsule(btn.id, btnName, resolveColor(btnName)))
             }
-        }
 
-        container.removeAllViews()
-        val cards = mutableListOf<Pair<MaterialCardView, CapsuleInfo>>()
-
-        fun applyCapsuleSelection(targetCard: MaterialCardView, item: CapsuleInfo) {
-            val activeColor = Color.parseColor(item.colorHex)
-            val strokeOff = Color.parseColor("#25313D")
-            val bgOff = Color.parseColor("#141B22")
-
-            cards.forEach { (c, _) ->
-                val isSel = (c == targetCard)
-                if (isSel) {
-                    c.strokeColor = activeColor
-                    c.strokeWidth = dp(ctx, 2.5f)
-                    c.setCardBackgroundColor(ColorStateList.valueOf(Color.parseColor("#1C2632")))
-                } else {
-                    c.strokeColor = strokeOff
-                    c.strokeWidth = dp(ctx, 1.2f)
-                    c.setCardBackgroundColor(ColorStateList.valueOf(bgOff))
+            // Fallback list if feed buttons are not yet cached
+            if (dynamicList.size == 1) {
+                val defaults = listOf(
+                    "Offline", "iHeartRadio", "KissKH", "AniDB", "Groove Music",
+                    "Radio Browser", "Youtube Music", "KHInsider", "OpenSubsonic",
+                    "Spotify", "IPTV", "SoundCloud", "Anikoto", "Google Drive"
+                )
+                defaults.forEach { name ->
+                    dynamicList.add(SourceCapsule(name.lowercase(), name, resolveColor(name)))
                 }
             }
 
-            updateDiamondAura(activeColor)
-            binding.searchBarContainer.strokeColor = activeColor
-            binding.ivSearchIcon.imageTintList = ColorStateList.valueOf(activeColor)
-            binding.etHomeSearch.hint = "Search songs in Savish ${item.name}..."
+            container.removeAllViews()
+            val cards = mutableListOf<Pair<MaterialCardView, SourceCapsule>>()
 
-            feedData.refresh()
-        }
+            fun applySelection(targetCard: MaterialCardView, item: SourceCapsule) {
+                selectedSource = item
+                val activeColor = Color.parseColor(item.colorHex)
+                val strokeOff = Color.parseColor("#25313D")
+                val bgOff = Color.parseColor("#141B22")
 
-        platformList.forEachIndexed { index, item ->
-            val card = MaterialCardView(ctx).apply {
-                radius = dp(ctx, 24f).toFloat()
-                strokeWidth = dp(ctx, 1.2f)
-                strokeColor = Color.parseColor("#25313D")
-                setCardBackgroundColor(ColorStateList.valueOf(Color.parseColor("#141B22")))
-                val lp = ViewGroup.MarginLayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    dp(ctx, 48f)
-                )
-                lp.setMargins(0, 0, dp(ctx, 10f), 0)
-                layoutParams = lp
+                cards.forEach { (c, _) ->
+                    val isSel = (c == targetCard)
+                    if (isSel) {
+                        c.strokeColor = activeColor
+                        c.strokeWidth = dp(ctx, 2.5f)
+                        c.setCardBackgroundColor(
+                            ColorStateList.valueOf(ColorUtils.setAlphaComponent(activeColor, 45))
+                        )
+                    } else {
+                        c.strokeColor = strokeOff
+                        c.strokeWidth = dp(ctx, 1.2f)
+                        c.setCardBackgroundColor(ColorStateList.valueOf(bgOff))
+                    }
+                }
+
+                updateDiamondAura(activeColor)
+                binding.searchBarContainer.strokeColor = activeColor
+                binding.ivSearchIcon.imageTintList = ColorStateList.valueOf(activeColor)
+                binding.etHomeSearch.hint = "Search songs in Savish ${item.name}..."
+
+                // Trigger feed reload for selected source
+                if (item.id != null) {
+                    val matchingBtn = buttonsList?.firstOrNull { it.id == item.id }
+                    if (matchingBtn != null) {
+                        feedData.onButtonClicked(matchingBtn)
+                    } else {
+                        feedData.refresh()
+                    }
+                } else {
+                    feedData.refresh()
+                }
             }
 
-            val row = LinearLayout(ctx).apply {
-                orientation = LinearLayout.HORIZONTAL
-                gravity = Gravity.CENTER
-                setPadding(dp(ctx, 18f), 0, dp(ctx, 18f), 0)
-            }
+            dynamicList.forEachIndexed { index, item ->
+                val card = MaterialCardView(ctx).apply {
+                    radius = dp(ctx, 22f).toFloat()
+                    strokeWidth = dp(ctx, 1.2f)
+                    strokeColor = Color.parseColor("#25313D")
+                    setCardBackgroundColor(ColorStateList.valueOf(Color.parseColor("#141B22")))
+                    val lp = ViewGroup.MarginLayoutParams(
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        dp(ctx, 42f)
+                    )
+                    lp.setMargins(0, 0, dp(ctx, 8f), 0)
+                    layoutParams = lp
+                }
 
-            val dot = View(ctx).apply {
-                val dotLp = ViewGroup.MarginLayoutParams(dp(ctx, 10f), dp(ctx, 10f))
-                dotLp.setMargins(0, 0, dp(ctx, 8f), 0)
-                layoutParams = dotLp
-                background = ContextCompat.getDrawable(ctx, android.R.drawable.presence_online)
-                backgroundTintList = ColorStateList.valueOf(Color.parseColor(item.colorHex))
-            }
+                val row = LinearLayout(ctx).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER
+                    setPadding(dp(ctx, 16f), 0, dp(ctx, 16f), 0)
+                }
 
-            val tv = TextView(ctx).apply {
-                text = item.name
-                textSize = 15f
-                setTextColor(Color.WHITE)
-                typeface = Typeface.DEFAULT_BOLD
-            }
+                val dot = View(ctx).apply {
+                    val dotLp = ViewGroup.MarginLayoutParams(dp(ctx, 8f), dp(ctx, 8f))
+                    dotLp.setMargins(0, 0, dp(ctx, 8f), 0)
+                    layoutParams = dotLp
+                    background = ContextCompat.getDrawable(ctx, android.R.drawable.presence_online)
+                    backgroundTintList = ColorStateList.valueOf(Color.parseColor(item.colorHex))
+                }
 
-            row.addView(dot)
-            row.addView(tv)
-            card.addView(row)
-            cards.add(card to item)
+                val tv = TextView(ctx).apply {
+                    text = item.name
+                    textSize = 14f
+                    setTextColor(Color.WHITE)
+                    typeface = Typeface.DEFAULT_BOLD
+                }
 
-            card.setOnClickListener {
-                applyCapsuleSelection(card, item)
-            }
+                row.addView(dot)
+                row.addView(tv)
+                card.addView(row)
+                cards.add(card to item)
 
-            container.addView(card)
+                card.setOnClickListener {
+                    applySelection(card, item)
+                }
 
-            if (index == 0) {
-                applyCapsuleSelection(card, item)
+                container.addView(card)
+
+                if (index == 0) {
+                    applySelection(card, item)
+                }
             }
         }
     }
