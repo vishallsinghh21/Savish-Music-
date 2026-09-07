@@ -32,7 +32,6 @@ import dev.brahmkshatriya.echo.common.models.Shelf
 import dev.brahmkshatriya.echo.databinding.FragmentHomeBinding
 import dev.brahmkshatriya.echo.extensions.ExtensionLoader
 import dev.brahmkshatriya.echo.extensions.ExtensionUtils.getAs
-import dev.brahmkshatriya.echo.extensions.MusicExtension
 import dev.brahmkshatriya.echo.extensions.cache.Cached
 import dev.brahmkshatriya.echo.ui.common.GridAdapter.Companion.configureGridLayout
 import dev.brahmkshatriya.echo.ui.common.UiViewModel
@@ -261,15 +260,13 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                     binding.ivSearchIcon.imageTintList = ColorStateList.valueOf(activeColor)
                     binding.etHomeSearch.hint = "Search songs in Savish $name..."
 
-                    if (extIndex >= 0 && extIndex < list.size) {
-                        feedData.current.value = list[extIndex] as? MusicExtension
-                    } else if (list.isNotEmpty()) {
-                        feedData.current.value = list.first() as? MusicExtension
-                    }
+                    // Type match using raw/generic cast to avoid Unresolved reference
+                    val targetExt = if (extIndex in list.indices) list[extIndex] else list.firstOrNull()
+                    (feedData.current as? kotlinx.coroutines.flow.MutableStateFlow<Any?>)?.value = targetExt
                     feedData.refresh()
                 }
 
-                // First Capsule: All media
+                // Capsule 1: All media
                 run {
                     val card = MaterialCardView(ctx).apply {
                         radius = dp(ctx, 24f).toFloat()
@@ -312,7 +309,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                     container.addView(card)
                 }
 
-                // Auto-detected Extension Capsules
+                // Dynamic Capsules auto-detected from installed extensions
                 list.forEachIndexed { index, ext ->
                     val colorHex = resolveColor(ext.name)
                     val card = MaterialCardView(ctx).apply {
