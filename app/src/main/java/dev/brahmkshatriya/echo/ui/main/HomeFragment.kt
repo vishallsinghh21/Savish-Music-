@@ -119,8 +119,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         val binding = FragmentHomeBinding.bind(view)
         bindingRef = binding
         setupTransition(view, false, MaterialSharedAxis.Y)
-        
-        applyInsets(binding.recyclerView) {
+
+        // Pass both parameters as required by applyInsets
+        applyInsets(binding.recyclerView, binding.appBarOutline) {
             binding.swipeRefresh.configure(it)
         }
 
@@ -140,7 +141,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         applyBackPressCallback()
         getTouchHelper(listener).attachToRecyclerView(binding.recyclerView)
 
-        // Bind directly without HeaderAdapter (This permanently removes the middle button strip)
+        // feedAdapter without HeaderAdapter suppresses duplicate middle buttons
         configureGridLayout(
             binding.recyclerView,
             feedAdapter
