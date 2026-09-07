@@ -100,10 +100,10 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         applyBackPressCallback()
         getTouchHelper(listener).attachToRecyclerView(binding.recyclerView)
 
-        // Pass false to showButtons to completely destroy the middle buttons row
+        // Valid signature without invalid parameters
         configureGridLayout(
             binding.recyclerView,
-            feedAdapter.withLoading(this, showButtons = false)
+            feedAdapter.withLoading(this)
         )
 
         binding.swipeRefresh.run {
@@ -268,4 +268,3 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         }
     }
 }
-
