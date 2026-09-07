@@ -12,7 +12,6 @@ import dev.brahmkshatriya.echo.common.models.Track
 import dev.brahmkshatriya.echo.databinding.ItemLoadingBinding
 import dev.brahmkshatriya.echo.playback.PlayerState
 import dev.brahmkshatriya.echo.ui.common.GridAdapter
-import dev.brahmkshatriya.echo.ui.feed.FeedData.FeedTab
 import dev.brahmkshatriya.echo.ui.feed.FeedLoadingAdapter.Companion.createListener
 import dev.brahmkshatriya.echo.ui.feed.FeedType.Enum.Category
 import dev.brahmkshatriya.echo.ui.feed.FeedType.Enum.CategoryGrid
@@ -34,7 +33,6 @@ import dev.brahmkshatriya.echo.ui.player.PlayerViewModel
 import dev.brahmkshatriya.echo.utils.ContextUtils.observe
 import dev.brahmkshatriya.echo.utils.ui.AnimationUtils.animatedWithAlpha
 import dev.brahmkshatriya.echo.utils.ui.scrolling.ScrollAnimPagingAdapter
-import kotlinx.coroutines.flow.combine
 import org.koin.androidx.viewmodel.ext.android.activityViewModel
 import java.lang.ref.WeakReference
 
@@ -153,32 +151,15 @@ class FeedAdapter(
     }.flatten()
 
     fun withLoading(fragment: Fragment, vararg before: GridAdapter): GridAdapter.Concat {
-        val tabs = TabsAdapter<FeedTab>({ tab.title }) { view, index, tab ->
-            listener.onTabSelected(view, tab.feedId, tab.extensionId, index)
-        }
-        fragment.observe(viewModel.tabsFlow) { tabs.data = it }
-        fragment.observe(viewModel.selectedTabIndexFlow) { tabs.selected = it }
-        val buttons = ButtonsAdapter(viewModel, listener, ::getAllTracks)
-        fragment.observe(viewModel.buttonsFlow) {
-            buttons.buttons = it
-            isPlayButtonShown = it?.buttons?.showPlayAndShuffle == true
-        }
         val loadStateListener = fragment.createListener { retry() }
-        val header = FeedLoadingAdapter(loadStateListener) { LoadingViewHolder(it) }
         val footer = FeedLoadingAdapter(loadStateListener) { LoadingViewHolder(it) }
-        val empty = EmptyAdapter()
-        fragment.observe(
-            loadStateFlow.combine(viewModel.shouldShowEmpty) { a, b -> a to b }
-        ) { (loadStates, shouldShowEmpty) ->
-            val isEmpty =
-                shouldShowEmpty && itemCount == 0 && loadStates.append is LoadState.NotLoading
-            empty.loadState = if (isEmpty) LoadState.Loading else LoadState.NotLoading(false)
-        }
+
         addLoadStateListener { loadStates ->
-            header.loadState = loadStates.refresh
             footer.loadState = loadStates.append
         }
-        return GridAdapter.Concat(*before, tabs, buttons, header, empty, this, footer)
+
+        // buttons, empty view, aur blocking header layer ko permanently remove kar diya hai
+        return GridAdapter.Concat(*before, this, footer)
     }
 
     override val adapter = this
