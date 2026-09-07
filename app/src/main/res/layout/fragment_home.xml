@@ -1,197 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/homeRootLayout"
+    android:id="@+id/homeRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#070A0F"
     tools:context="dev.brahmkshatriya.echo.ui.main.HomeFragment">
 
-    <!-- Diamond Radial Aura Glowing Background -->
     <View
         android:id="@+id/viewAmbientGlow"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:layout_height="match_parent" />
 
-    <!-- Top Fixed Group -->
-    <LinearLayout
-        android:id="@+id/topHeaderGroup"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        app:layout_constraintTop_toTopOf="parent">
-
-        <!-- Top Header -->
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/headerContainer"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingHorizontal="22dp"
-            android:paddingTop="38dp"
-            android:paddingBottom="8dp">
-
-            <LinearLayout
-                android:id="@+id/syncStatusContainer"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent">
-
-                <View
-                    android:id="@+id/dotSyncStatus"
-                    android:layout_width="9dp"
-                    android:layout_height="9dp"
-                    android:background="@android:drawable/presence_online" />
-
-                <TextView
-                    android:id="@+id/tvSyncStatus"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:letterSpacing="0.08"
-                    android:text="GLOBAL SYNC ACTIVE"
-                    android:textColor="#00FF66"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
-            <TextView
-                android:id="@+id/tvAppTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:fontFamily="sans-serif-black"
-                android:text="Savish Music"
-                android:textColor="#FFFFFF"
-                android:textSize="32sp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/syncStatusContainer" />
-
-            <!-- Profile Avatar (Clickable to Settings) -->
-            <com.google.android.material.imageview.ShapeableImageView
-                android:id="@+id/ivProfileAvatar"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:background="#1B232E"
-                android:clickable="true"
-                android:focusable="true"
-                android:foreground="?attr/selectableItemBackgroundBorderless"
-                android:padding="2.5dp"
-                android:scaleType="centerCrop"
-                app:layout_constraintBottom_toBottomOf="@id/tvAppTitle"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="@id/syncStatusContainer"
-                app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full"
-                app:strokeColor="#38E54D"
-                app:strokeWidth="2dp" />
-        </androidx.constraintlayout.widget.ConstraintLayout>
-
-        <!-- Horizontal Dynamic Platform Capsules Container -->
-        <HorizontalScrollView
-            android:id="@+id/scrollCapsules"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:clipToPadding="false"
-            android:overScrollMode="never"
-            android:paddingHorizontal="16dp"
-            android:paddingVertical="6dp"
-            android:scrollbars="none">
-
-            <!-- All platform capsules will be auto-generated here -->
-            <LinearLayout
-                android:id="@+id/layoutCapsulesContainer"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal" />
-        </HorizontalScrollView>
-
-        <!-- Search Bar -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/searchBarContainer"
-            android:layout_width="match_parent"
-            android:layout_height="54dp"
-            android:layout_marginHorizontal="18dp"
-            android:layout_marginTop="8dp"
-            app:cardBackgroundColor="#141B22"
-            app:cardCornerRadius="27dp"
-            app:cardElevation="0dp"
-            app:strokeColor="#25323E"
-            app:strokeWidth="1.5dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingHorizontal="18dp">
-
-                <ImageView
-                    android:id="@+id/ivSearchIcon"
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
-                    android:src="@android:drawable/ic_menu_search"
-                    app:tint="#00E5FF" />
-
-                <EditText
-                    android:id="@+id/etHomeSearch"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_marginStart="12dp"
-                    android:background="@null"
-                    android:hint="Search songs in Savish All media..."
-                    android:imeOptions="actionSearch"
-                    android:inputType="text"
-                    android:maxLines="1"
-                    android:textColor="#FFFFFF"
-                    android:textColorHint="#6D7E8F"
-                    android:textSize="15sp" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Greeting Row -->
-        <LinearLayout
-            android:id="@+id/layoutUserGreeting"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:orientation="vertical"
-            android:paddingHorizontal="22dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Welcome back,"
-                android:textColor="#8F9CA8"
-                android:textSize="13sp" />
-
-            <TextView
-                android:id="@+id/tvUserName"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-medium"
-                android:text="Vishal Singh"
-                android:textColor="#FFFFFF"
-                android:textSize="22sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-    </LinearLayout>
-
-    <!-- Content Feed (Albums, Trending, Liked Music) -->
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipeRefresh"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_marginTop="4dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/topHeaderGroup">
+        android:layout_height="match_parent">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recycler_view"
@@ -201,16 +26,132 @@
             android:contentDescription="@string/home"
             android:orientation="vertical"
             android:paddingHorizontal="16dp"
-            android:paddingBottom="96dp"
+            android:paddingTop="215dp"
+            android:paddingBottom="100dp"
             app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
             tools:listitem="@layout/item_shelf_lists" />
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-    <FrameLayout
+    <LinearLayout
         android:id="@+id/appBarOutline"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:visibility="gone"
-        app:layout_constraintTop_toTopOf="parent" />
-</androidx.constraintlayout.widget.ConstraintLayout>
+        android:orientation="vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="12dp"
+        android:background="@android:color/transparent">
+
+        <TextView
+            android:id="@+id/tvGlobalSync"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="● GLOBAL SYNC ACTIVE"
+            android:textColor="#00E5FF"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp">
+
+            <TextView
+                android:id="@+id/tvAppTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:text="Savish Music"
+                android:textColor="@android:color/white"
+                android:textSize="26sp"
+                android:textStyle="bold" />
+
+            <ImageView
+                android:id="@+id/ivProfileAvatar"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:background="@drawable/shape_rounded_item_corner"
+                android:backgroundTint="#1AFFFFFF"
+                android:padding="6dp"
+                android:src="@drawable/ic_launcher_foreground" />
+        </RelativeLayout>
+
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:overScrollMode="never"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:id="@+id/layoutCapsulesContainer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" />
+        </HorizontalScrollView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/searchBarContainer"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="10dp"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="#141B22"
+            app:strokeColor="#25313D"
+            app:strokeWidth="1.2dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="14dp">
+
+                <ImageView
+                    android:id="@+id/ivSearchIcon"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@android:drawable/ic_menu_search"
+                    app:tint="#00E5FF" />
+
+                <EditText
+                    android:id="@+id/etHomeSearch"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginStart="10dp"
+                    android:background="@android:color/transparent"
+                    android:hint="Search songs in Savish All media..."
+                    android:imeOptions="actionSearch"
+                    android:inputType="text"
+                    android:maxLines="1"
+                    android:textColor="@android:color/white"
+                    android:textColorHint="#6B7C8B"
+                    android:textSize="14sp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <TextView
+            android:id="@+id/tvWelcomeBack"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Welcome back,"
+            android:textColor="#8F9CA8"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/tvUserName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Vishal Singh"
+            android:textColor="@android:color/white"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
