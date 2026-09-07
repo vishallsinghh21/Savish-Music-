@@ -32,6 +32,7 @@ import dev.brahmkshatriya.echo.common.models.Shelf
 import dev.brahmkshatriya.echo.databinding.FragmentHomeBinding
 import dev.brahmkshatriya.echo.extensions.ExtensionLoader
 import dev.brahmkshatriya.echo.extensions.ExtensionUtils.getAs
+import dev.brahmkshatriya.echo.extensions.MusicExtension
 import dev.brahmkshatriya.echo.extensions.cache.Cached
 import dev.brahmkshatriya.echo.ui.common.GridAdapter.Companion.configureGridLayout
 import dev.brahmkshatriya.echo.ui.common.UiViewModel
@@ -234,6 +235,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
                 val cards = mutableListOf<Pair<MaterialCardView, String>>()
 
+                @Suppress("UNCHECKED_CAST")
                 fun applySelection(targetCard: MaterialCardView, name: String, colorHex: String, extIndex: Int) {
                     val activeColor = Color.parseColor(colorHex)
                     val strokeOff = Color.parseColor("#25313D")
@@ -260,9 +262,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                     binding.etHomeSearch.hint = "Search songs in Savish $name..."
 
                     if (extIndex >= 0 && extIndex < list.size) {
-                        feedData.current.value = list[extIndex]
+                        feedData.current.value = list[extIndex] as? MusicExtension
                     } else if (list.isNotEmpty()) {
-                        feedData.current.value = list.first()
+                        feedData.current.value = list.first() as? MusicExtension
                     }
                     feedData.refresh()
                 }
@@ -310,7 +312,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                     container.addView(card)
                 }
 
-                // Dynamic Capsules auto-detected from installed extensions
+                // Auto-detected Extension Capsules
                 list.forEachIndexed { index, ext ->
                     val colorHex = resolveColor(ext.name)
                     val card = MaterialCardView(ctx).apply {
@@ -359,7 +361,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                     container.addView(card)
                 }
 
-                // Default selection on launch
                 if (cards.isNotEmpty()) {
                     val firstCard = cards.first().first
                     applySelection(firstCard, "All media", "#00E5FF", -1)
