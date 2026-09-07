@@ -119,9 +119,11 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         val binding = FragmentHomeBinding.bind(view)
         bindingRef = binding
         setupTransition(view, false, MaterialSharedAxis.Y)
-        applyInsets(binding.recyclerView, binding.appBarOutline) {
+        
+        applyInsets(binding.recyclerView) {
             binding.swipeRefresh.configure(it)
         }
+
         val uiViewModel by activityViewModel<UiViewModel>()
 
         observe(uiViewModel.navigationReselected) {
@@ -138,10 +140,10 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         applyBackPressCallback()
         getTouchHelper(listener).attachToRecyclerView(binding.recyclerView)
 
-        // Native feed adapter binding
+        // Bind directly without HeaderAdapter (This permanently removes the middle button strip)
         configureGridLayout(
             binding.recyclerView,
-            feedAdapter.withLoading(this)
+            feedAdapter
         )
 
         binding.swipeRefresh.run {
