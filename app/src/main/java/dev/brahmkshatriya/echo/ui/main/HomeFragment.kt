@@ -45,6 +45,7 @@ import dev.brahmkshatriya.echo.ui.feed.FeedClickListener.Companion.getFeedListen
 import dev.brahmkshatriya.echo.ui.feed.FeedData
 import dev.brahmkshatriya.echo.ui.feed.FeedViewModel
 import dev.brahmkshatriya.echo.ui.main.MainFragment.Companion.applyInsets
+import dev.brahmkshatriya.echo.ui.main.search.SearchViewModel
 import dev.brahmkshatriya.echo.utils.ContextUtils.observe
 import dev.brahmkshatriya.echo.utils.ui.AnimationUtils.setupTransition
 import kotlinx.coroutines.flow.collectLatest
@@ -130,6 +131,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         }
 
         val uiViewModel by activityViewModel<UiViewModel>()
+        val searchViewModel by activityViewModel<SearchViewModel>()
 
         observe(uiViewModel.navigationReselected) {
             if (it != 0) return@observe
@@ -147,7 +149,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
         configureGridLayout(
             binding.recyclerView,
-            feedAdapter.withLoading(this)
+            feedAdapter
         )
 
         binding.swipeRefresh.run {
@@ -171,8 +173,12 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
         binding.etHomeSearch.setOnEditorActionListener { v, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                val query = binding.etHomeSearch.text?.toString()?.trim().orEmpty()
                 val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
                 imm?.hideSoftInputFromWindow(v.windowToken, 0)
+                if (query.isNotEmpty()) {
+                    searchViewModel.queryFlow.value = query
+                }
                 uiViewModel.navigation.value = 2
                 true
             } else false
@@ -228,30 +234,33 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             binding.viewAmbientGlow.background = radialGradient
         }
 
+        // Two-Way Sync Engine: Extension List aur Selected Extension dono ko live observe karega
         viewLifecycleOwner.lifecycleScope.launch {
-            extensionLoader.music.collectLatest { list ->
+            combine(extensionLoader.music, extensionLoader.current) { list, activeCurrent ->
+                list to activeCurrent
+            }.collectLatest { (list, activeCurrent) ->
                 val container = binding.layoutCapsulesContainer
                 container.removeAllViews()
 
-                val cards = mutableListOf<Pair<MaterialCardView, String>>()
+                // Map of (extensionId -> Pair(cardView, colorHex))
+                val capsuleViews = mutableMapOf<String, Pair<MaterialCardView, String>>()
+                val strokeOff = Color.parseColor("#25313D")
+                val bgOff = Color.parseColor("#141B22")
 
-                fun applySelection(targetCard: MaterialCardView, name: String, colorHex: String, targetExt: MusicExtension?) {
+                fun applySelectionUI(targetCard: MaterialCardView, name: String, colorHex: String) {
                     val activeColor = Color.parseColor(colorHex)
-                    val strokeOff = Color.parseColor("#25313D")
-                    val bgOff = Color.parseColor("#141B22")
 
-                    cards.forEach { (c, _) ->
-                        val isSel = (c == targetCard)
-                        if (isSel) {
-                            c.strokeColor = activeColor
-                            c.strokeWidth = dp(ctx, 2.5f)
-                            c.setCardBackgroundColor(
+                    capsuleViews.values.forEach { (card, _) ->
+                        if (card == targetCard) {
+                            card.strokeColor = activeColor
+                            card.strokeWidth = dp(ctx, 2.5f)
+                            card.setCardBackgroundColor(
                                 ColorStateList.valueOf(ColorUtils.setAlphaComponent(activeColor, 45))
                             )
                         } else {
-                            c.strokeColor = strokeOff
-                            c.strokeWidth = dp(ctx, 1.2f)
-                            c.setCardBackgroundColor(ColorStateList.valueOf(bgOff))
+                            card.strokeColor = strokeOff
+                            card.strokeWidth = dp(ctx, 1.2f)
+                            card.setCardBackgroundColor(ColorStateList.valueOf(bgOff))
                         }
                     }
 
@@ -259,58 +268,53 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                     binding.searchBarContainer.strokeColor = activeColor
                     binding.ivSearchIcon.imageTintList = ColorStateList.valueOf(activeColor)
                     binding.etHomeSearch.hint = "Search songs in Savish $name..."
-
-                    val selectedExt = targetExt ?: list.firstOrNull()
-                    if (selectedExt != null) {
-                        extensionLoader.setupMusicExtension(selectedExt, true)
-                    }
-                    feedData.refresh()
                 }
 
-                // Capsule 1: All media
-                run {
-                    val card = MaterialCardView(ctx).apply {
-                        radius = dp(ctx, 24f).toFloat()
-                        strokeWidth = dp(ctx, 1.2f)
-                        strokeColor = Color.parseColor("#25313D")
-                        setCardBackgroundColor(ColorStateList.valueOf(Color.parseColor("#141B22")))
-                        val lp = ViewGroup.MarginLayoutParams(
-                            ViewGroup.LayoutParams.WRAP_CONTENT,
-                            dp(ctx, 48f)
-                        )
-                        lp.setMargins(0, 0, dp(ctx, 10f), 0)
-                        layoutParams = lp
-                    }
-                    val row = LinearLayout(ctx).apply {
-                        orientation = LinearLayout.HORIZONTAL
-                        gravity = Gravity.CENTER
-                        setPadding(dp(ctx, 18f), 0, dp(ctx, 18f), 0)
-                    }
-                    val dot = View(ctx).apply {
-                        val dotLp = ViewGroup.MarginLayoutParams(dp(ctx, 9f), dp(ctx, 9f))
-                        dotLp.setMargins(0, 0, dp(ctx, 8f), 0)
-                        layoutParams = dotLp
-                        background = ContextCompat.getDrawable(ctx, android.R.drawable.presence_online)
-                        backgroundTintList = ColorStateList.valueOf(Color.parseColor("#00E5FF"))
-                    }
-                    val tv = TextView(ctx).apply {
-                        text = "All media"
-                        textSize = 15f
-                        setTextColor(Color.WHITE)
-                        typeface = Typeface.DEFAULT_BOLD
-                    }
-                    row.addView(dot)
-                    row.addView(tv)
-                    card.addView(row)
-                    cards.add(card to "All media")
-
-                    card.setOnClickListener {
-                        applySelection(card, "All media", "#00E5FF", null)
-                    }
-                    container.addView(card)
+                // First Capsule: All media
+                val allMediaCard = MaterialCardView(ctx).apply {
+                    radius = dp(ctx, 24f).toFloat()
+                    strokeWidth = dp(ctx, 1.2f)
+                    strokeColor = Color.parseColor("#25313D")
+                    setCardBackgroundColor(ColorStateList.valueOf(Color.parseColor("#141B22")))
+                    val lp = ViewGroup.MarginLayoutParams(
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        dp(ctx, 48f)
+                    )
+                    lp.setMargins(0, 0, dp(ctx, 10f), 0)
+                    layoutParams = lp
                 }
+                val allMediaRow = LinearLayout(ctx).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER
+                    setPadding(dp(ctx, 18f), 0, dp(ctx, 18f), 0)
+                }
+                val allMediaDot = View(ctx).apply {
+                    val dotLp = ViewGroup.MarginLayoutParams(dp(ctx, 9f), dp(ctx, 9f))
+                    dotLp.setMargins(0, 0, dp(ctx, 8f), 0)
+                    layoutParams = dotLp
+                    background = ContextCompat.getDrawable(ctx, android.R.drawable.presence_online)
+                    backgroundTintList = ColorStateList.valueOf(Color.parseColor("#00E5FF"))
+                }
+                val allMediaTv = TextView(ctx).apply {
+                    text = "All media"
+                    textSize = 15f
+                    setTextColor(Color.WHITE)
+                    typeface = Typeface.DEFAULT_BOLD
+                }
+                allMediaRow.addView(allMediaDot)
+                allMediaRow.addView(allMediaTv)
+                allMediaCard.addView(allMediaRow)
+                capsuleViews["all_media"] = allMediaCard to "#00E5FF"
 
-                // Dynamic Capsules from installed Music extensions
+                allMediaCard.setOnClickListener {
+                    val target = list.find { "youtube" in it.name.lowercase() } ?: list.firstOrNull()
+                    if (target != null) {
+                        extensionLoader.setupMusicExtension(target, true)
+                    }
+                }
+                container.addView(allMediaCard)
+
+                // Dynamically create capsules for each installed extension
                 list.forEach { ext ->
                     val colorHex = resolveColor(ext.name)
                     val card = MaterialCardView(ctx).apply {
@@ -350,18 +354,32 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                     row.addView(dot)
                     row.addView(tv)
                     card.addView(row)
-                    cards.add(card to ext.name)
+                    capsuleViews[ext.id] = card to colorHex
 
                     card.setOnClickListener {
-                        applySelection(card, ext.name, colorHex, ext)
+                        // Extension select karo - baaki sync reactive engine khud karega
+                        extensionLoader.setupMusicExtension(ext, true)
                     }
 
                     container.addView(card)
                 }
 
-                if (cards.isNotEmpty()) {
-                    val firstCard = cards.first().first
-                    applySelection(firstCard, "All media", "#00E5FF", null)
+                // === TWO-WAY REALTIME DISPATCH ===
+                // Agar bottom sheet se ya kahin se bhi activeCurrent badla, yahan turant pakad kar UI aur Feed update hogi
+                val activeExt = activeCurrent ?: list.firstOrNull()
+                if (activeExt != null) {
+                    val matchingEntry = capsuleViews[activeExt.id]
+                    if (matchingEntry != null) {
+                        applySelectionUI(matchingEntry.first, activeExt.name, matchingEntry.second)
+                    }
+
+                    // FeedData ke current state ko sync karke refresh call kiya taaki songs/albums turant load hon
+                    if (feedData.current.value?.id != activeExt.id) {
+                        feedData.current.value = activeExt
+                        feedData.refresh()
+                    }
+                } else {
+                    applySelectionUI(allMediaCard, "All media", "#00E5FF")
                 }
             }
         }
